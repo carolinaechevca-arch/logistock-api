@@ -2,12 +2,16 @@ package com.logistock.inventory.infra.adapters.driving.http.controller;
 
 import com.logistock.inventory.configuration.exceptionhandler.ApiErrorResponse;
 import com.logistock.inventory.domain.model.InventoryMovement;
+import com.logistock.inventory.domain.model.PageResult;
+import com.logistock.inventory.domain.port.in.ListInventoryMovementsUseCase;
 import com.logistock.inventory.domain.port.in.RegisterInventoryEntryUseCase;
 import com.logistock.inventory.domain.port.in.RegisterInventoryExitUseCase;
 import com.logistock.inventory.infra.adapters.driving.http.constants.ApiPaths;
 import com.logistock.inventory.infra.adapters.driving.http.dto.request.RegisterInventoryEntryRequest;
 import com.logistock.inventory.infra.adapters.driving.http.dto.request.RegisterInventoryExitRequest;
 import com.logistock.inventory.infra.adapters.driving.http.dto.response.InventoryMovementResponse;
+import com.logistock.inventory.infra.adapters.driving.http.dto.request.PaginationRequest;
+import com.logistock.inventory.infra.adapters.driving.http.dto.response.PageResponse;
 import com.logistock.inventory.infra.adapters.driving.http.mapper.InventoryMovementHttpMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,9 +21,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +39,7 @@ public class InventoryController {
 
     private final RegisterInventoryEntryUseCase registerInventoryEntryUseCase;
     private final RegisterInventoryExitUseCase registerInventoryExitUseCase;
+    private final ListInventoryMovementsUseCase listInventoryMovementsUseCase;
     private final InventoryMovementHttpMapper mapper;
 
     @PostMapping(ApiPaths.INVENTORY_ENTRIES)
@@ -85,5 +93,24 @@ public class InventoryController {
                 mapper.toExitCommand(request)
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(movement));
+    }
+
+    @GetMapping(ApiPaths.INVENTORY_MOVEMENTS)
+    @Operation(summary = "List inventory movements")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Inventory movements listed"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid pagination",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<PageResponse<InventoryMovementResponse>> listMovements(
+            @ParameterObject @ModelAttribute PaginationRequest request
+    ) {
+        PageResult<InventoryMovement> result = listInventoryMovementsUseCase.list(
+                mapper.toPaginationCriteria(request)
+        );
+        return ResponseEntity.ok(mapper.toPageResponse(result));
     }
 }

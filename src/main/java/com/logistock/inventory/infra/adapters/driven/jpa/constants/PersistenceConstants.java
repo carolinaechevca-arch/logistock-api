@@ -8,6 +8,7 @@ public final class PersistenceConstants {
     public static final String ID_ATTRIBUTE = "id";
     public static final String CATEGORY_ATTRIBUTE = "category";
     public static final String STOCK_ATTRIBUTE = "stock";
+    public static final String CREATED_AT_ATTRIBUTE = "createdAt";
 
     private PersistenceConstants() {
     }

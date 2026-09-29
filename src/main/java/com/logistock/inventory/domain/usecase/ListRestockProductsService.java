@@ -1,7 +1,6 @@
 package com.logistock.inventory.domain.usecase;
 
 import com.logistock.inventory.domain.constants.ProductConstants;
-import com.logistock.inventory.domain.exception.InvalidPaginationException;
 import com.logistock.inventory.domain.model.PageResult;
 import com.logistock.inventory.domain.model.PaginationCriteria;
 import com.logistock.inventory.domain.model.Product;
@@ -22,7 +21,7 @@ public class ListRestockProductsService implements ListRestockProductsUseCase {
     @Override
     public PageResult<Product> list(PaginationCriteria criteria) {
         Objects.requireNonNull(criteria);
-        validatePagination(criteria);
+        PaginationRules.validate(criteria.page(), criteria.size());
         ProductSearchCriteria searchCriteria = new ProductSearchCriteria(
                 null,
                 null,
@@ -31,13 +30,5 @@ public class ListRestockProductsService implements ListRestockProductsUseCase {
                 criteria.size()
         );
         return productRepository.findAll(searchCriteria);
-    }
-
-    private void validatePagination(PaginationCriteria criteria) {
-        if (criteria.page() < ProductConstants.DEFAULT_PAGE
-                || criteria.size() < 1
-                || criteria.size() > ProductConstants.MAX_PAGE_SIZE) {
-            throw new InvalidPaginationException();
-        }
     }
 }

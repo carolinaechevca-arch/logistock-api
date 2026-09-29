@@ -98,7 +98,8 @@ class InventoryControllerIntegrationTest {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/v1/inventory/entries'].post").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/inventory/exits'].post").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/inventory/exits'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/inventory/movements'].get").exists());
     }
 
     @Test
@@ -182,6 +183,34 @@ class InventoryControllerIntegrationTest {
         assertThat(movementRepository.count()).isZero();
     }
 
+    @Test
+    void listsInventoryMovementsFromNewestToOldest() throws Exception {
+        Long productId = createProduct();
+        registerEntry(productId, 8);
+        registerExit(productId, 5);
+
+        mockMvc.perform(get("/api/v1/inventory/movements")
+                        .queryParam("page", "0")
+                        .queryParam("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].type").value("EXIT"))
+                .andExpect(jsonPath("$.content[0].productId").value(productId))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.last").value(false));
+    }
+
+    @Test
+    void rejectsInvalidMovementPagination() throws Exception {
+        mockMvc.perform(get("/api/v1/inventory/movements")
+                        .queryParam("size", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PAGINATION"));
+    }
+
     private Long createProduct() throws Exception {
         mockMvc.perform(post("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -196,5 +225,29 @@ class InventoryControllerIntegrationTest {
                                 """))
                 .andExpect(status().isCreated());
         return productRepository.findAll().getFirst().getId();
+    }
+
+    private void registerEntry(Long productId, int quantity) throws Exception {
+        mockMvc.perform(post("/api/v1/inventory/entries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "productId": %d,
+                                  "quantity": %d
+                                }
+                                """.formatted(productId, quantity)))
+                .andExpect(status().isCreated());
+    }
+
+    private void registerExit(Long productId, int quantity) throws Exception {
+        mockMvc.perform(post("/api/v1/inventory/exits")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "productId": %d,
+                                  "quantity": %d
+                                }
+                                """.formatted(productId, quantity)))
+                .andExpect(status().isCreated());
     }
 }
