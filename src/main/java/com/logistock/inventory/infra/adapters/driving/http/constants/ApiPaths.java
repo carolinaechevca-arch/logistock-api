@@ -7,6 +7,7 @@ public final class ApiPaths {
     public static final String PRODUCTS_RESTOCK = "/restock";
     public static final String INVENTORY = "/api/v1/inventory";
     public static final String INVENTORY_ENTRIES = "/entries";
+    public static final String INVENTORY_EXITS = "/exits";
 
     private ApiPaths() {
     }

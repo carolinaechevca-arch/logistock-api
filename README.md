@@ -2,7 +2,7 @@
 
 API REST para la gestión de inventario de una empresa de logística. El proyecto busca mantener separadas las reglas del negocio, la entrada HTTP y la persistencia mediante arquitectura hexagonal.
 
-El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos y registrar entradas de inventario con trazabilidad.
+El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos y registrar entradas y salidas de inventario con trazabilidad.
 
 ## Estado actual
 
@@ -14,8 +14,9 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 | `GET` | `/api/v1/products/restock` | Implementado | Lista productos con stock menor que cinco |
 | `DELETE` | `/api/v1/products/{id}` | Implementado | Elimina un producto únicamente cuando su stock es cero |
 | `POST` | `/api/v1/inventory/entries` | Implementado | Registra una entrada e incrementa el stock |
+| `POST` | `/api/v1/inventory/exits` | Implementado | Registra una salida y disminuye el stock |
 
-Los endpoints de salidas, consultas de movimientos y pedidos se implementarán en features posteriores.
+Los endpoints de consulta de movimientos y pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -104,11 +105,11 @@ Lombok se utiliza únicamente para reducir código repetitivo, principalmente co
 
 ### Concurrencia
 
-La tabla y la entidad de productos incluyen el campo `version` con `@Version`. Esto deja preparado el control optimista de concurrencia para los futuros movimientos que modifiquen el stock.
+La tabla y la entidad de productos incluyen el campo `version` con `@Version`. Las entradas y salidas usan este control optimista para detectar modificaciones concurrentes. Si dos operaciones intentan cambiar simultáneamente la misma versión del producto, una de ellas devuelve `409 Conflict` con el código `CONCURRENT_INVENTORY_UPDATE` y debe reintentarse.
 
 ### Transacciones
 
-La consulta, validación de stock y eliminación del producto se ejecutan dentro de una misma transacción. Una entrada de inventario también actualiza el producto y registra el movimiento dentro de una sola transacción, evitando que uno de los dos cambios quede persistido sin el otro. El dominio continúa desacoplado de Spring: las transacciones se aplican desde la configuración mediante `TransactionTemplate` y los casos de uso se registran con `@Bean`.
+La consulta, validación de stock y eliminación del producto se ejecutan dentro de una misma transacción. Las entradas y salidas también actualizan el producto y registran el movimiento dentro de una sola transacción, evitando que uno de los dos cambios quede persistido sin el otro. El dominio continúa desacoplado de Spring: las transacciones se aplican desde la configuración mediante `TransactionTemplate` y los casos de uso se registran con `@Bean`.
 
 ## Modelo de producto
 
@@ -144,12 +145,12 @@ Cada movimiento contiene:
 | --- | --- | --- |
 | `id` | `Long` | Generado por la base de datos |
 | `productId` | `Long` | Producto asociado al movimiento |
-| `type` | `InventoryMovementType` | `ENTRY` para la feature actual |
+| `type` | `InventoryMovementType` | `ENTRY` o `EXIT` |
 | `quantity` | `int` | Debe ser mayor que cero |
 | `createdAt` | `Instant` | Fecha UTC generada por la aplicación |
 | `observation` | `String` | Opcional, máximo 500 caracteres |
 
-Cada entrada incrementa el stock y conserva un registro separado para garantizar la trazabilidad.
+Cada entrada incrementa el stock y cada salida lo disminuye. Ambos movimientos conservan un registro separado para garantizar la trazabilidad.
 
 ## PostgreSQL
 
@@ -564,6 +565,72 @@ Reglas:
 
 Una petición inválida devuelve `400 Bad Request`. Un producto inexistente devuelve `404 Not Found` con el código `PRODUCT_NOT_FOUND`.
 
+## Registrar una salida de inventario
+
+```http
+POST /api/v1/inventory/exits
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "productId": 1,
+  "quantity": 5,
+  "observation": "Customer shipment"
+}
+```
+
+Ejemplo con cURL:
+
+```bash
+curl --request POST \
+  --url http://localhost:8080/api/v1/inventory/exits \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "productId": 1,
+    "quantity": 5,
+    "observation": "Customer shipment"
+  }'
+```
+
+Respuesta `201 Created`:
+
+```json
+{
+  "id": 2,
+  "productId": 1,
+  "type": "EXIT",
+  "quantity": 5,
+  "createdAt": "2026-09-28T21:00:00Z",
+  "observation": "Customer shipment"
+}
+```
+
+Reglas:
+
+- El producto debe existir.
+- La cantidad debe ser mayor que cero.
+- La cantidad no puede superar el stock disponible.
+- El stock nunca puede quedar negativo.
+- La reducción del stock y el movimiento se guardan en una misma transacción.
+- La observación es opcional y admite máximo 500 caracteres.
+
+Cuando el stock es insuficiente, la API devuelve `409 Conflict`:
+
+```json
+{
+  "timestamp": "2026-09-28T21:00:00Z",
+  "status": 409,
+  "error": "Conflict",
+  "code": "INSUFFICIENT_STOCK",
+  "message": "Insufficient stock for product 1. Available: 3, requested: 5",
+  "path": "/api/v1/inventory/exits",
+  "details": {}
+}
+```
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -608,6 +675,10 @@ Las pruebas actuales cubren:
 - Incremento del stock asociado.
 - Persistencia de la trazabilidad del movimiento.
 - Rechazo de cantidades no positivas y productos inexistentes.
+- Registro de salidas de inventario.
+- Disminución del stock sin permitir valores negativos.
+- Rechazo de salidas superiores al stock disponible.
+- Persistencia de movimientos `EXIT`.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -619,5 +690,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/register-inventory-entry
+feature/register-inventory-exit
 ```

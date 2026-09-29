@@ -1,9 +1,11 @@
 package com.logistock.inventory.configuration.beans;
 
 import com.logistock.inventory.domain.port.in.RegisterInventoryEntryUseCase;
+import com.logistock.inventory.domain.port.in.RegisterInventoryExitUseCase;
 import com.logistock.inventory.domain.port.out.InventoryMovementRepositoryPort;
 import com.logistock.inventory.domain.port.out.ProductRepositoryPort;
 import com.logistock.inventory.domain.usecase.RegisterInventoryEntryService;
+import com.logistock.inventory.domain.usecase.RegisterInventoryExitService;
 import com.logistock.inventory.infra.adapters.driven.jpa.adapter.InventoryMovementRepositoryAdapter;
 import com.logistock.inventory.infra.adapters.driven.jpa.mapper.InventoryMovementEntityMapper;
 import com.logistock.inventory.infra.adapters.driven.jpa.repository.SpringDataInventoryMovementRepository;
@@ -59,10 +61,30 @@ public class InventoryUseCaseConfiguration {
     }
 
     @Bean
+    RegisterInventoryExitUseCase registerInventoryExitUseCase(
+            ProductRepositoryPort productRepository,
+            InventoryMovementRepositoryPort movementRepository,
+            Clock clock,
+            TransactionTemplate transactionTemplate
+    ) {
+        RegisterInventoryExitUseCase service = new RegisterInventoryExitService(
+                productRepository,
+                movementRepository,
+                clock
+        );
+        return command -> transactionTemplate.execute(status -> service.register(command));
+    }
+
+    @Bean
     InventoryController inventoryController(
             RegisterInventoryEntryUseCase registerInventoryEntryUseCase,
+            RegisterInventoryExitUseCase registerInventoryExitUseCase,
             InventoryMovementHttpMapper mapper
     ) {
-        return new InventoryController(registerInventoryEntryUseCase, mapper);
+        return new InventoryController(
+                registerInventoryEntryUseCase,
+                registerInventoryExitUseCase,
+                mapper
+        );
     }
 }
