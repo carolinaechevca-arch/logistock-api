@@ -2,7 +2,7 @@
 
 API REST para la gestión de inventario de una empresa de logística. El proyecto busca mantener separadas las reglas del negocio, la entrada HTTP y la persistencia mediante arquitectura hexagonal.
 
-El desarrollo se realiza de forma incremental. Actualmente se pueden crear productos, consultarlos, listarlos con filtros y eliminar los que no tengan stock.
+El desarrollo se realiza de forma incremental. Actualmente se pueden crear productos, consultarlos, listarlos con filtros, identificar los que requieren reabastecimiento y eliminar los que no tengan stock.
 
 ## Estado actual
 
@@ -11,9 +11,10 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden crear produ
 | `POST` | `/api/v1/products` | Implementado | Crea un producto en el inventario |
 | `GET` | `/api/v1/products` | Implementado | Lista productos con paginación y filtros |
 | `GET` | `/api/v1/products/{id}` | Implementado | Consulta un producto por identificador |
+| `GET` | `/api/v1/products/restock` | Implementado | Lista productos con stock menor que cinco |
 | `DELETE` | `/api/v1/products/{id}` | Implementado | Elimina un producto únicamente cuando su stock es cero |
 
-Los endpoints de movimientos de inventario, reabastecimiento y pedidos se implementarán en features posteriores.
+Los endpoints de movimientos de inventario y pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -443,6 +444,54 @@ Ejemplo de conflicto:
 }
 ```
 
+## Productos por reabastecer
+
+```http
+GET /api/v1/products/restock?page=0&size=10
+```
+
+Un producto requiere reabastecimiento cuando su stock es menor que cinco unidades. El umbral es una regla fija del dominio y no puede modificarse mediante parámetros HTTP.
+
+El endpoint acepta:
+
+| Parámetro | Predeterminado | Descripción |
+| --- | --- | --- |
+| `page` | `0` | Número de página, comenzando en cero |
+| `size` | `10` | Elementos por página, entre 1 y 100 |
+
+Ejemplo:
+
+```bash
+curl --request GET \
+  --url 'http://localhost:8080/api/v1/products/restock?page=0&size=10'
+```
+
+Respuesta `200 OK`:
+
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "name": "Low stock scanner",
+      "description": "Warehouse device",
+      "category": "ELECTRONICS",
+      "stock": 4,
+      "price": 245.90,
+      "createdAt": "2026-09-28T20:00:00Z",
+      "updatedAt": "2026-09-28T20:00:00Z"
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 1,
+  "totalPages": 1,
+  "last": true
+}
+```
+
+Una paginación inválida devuelve `400 Bad Request` con el código `INVALID_PAGINATION`.
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -480,6 +529,9 @@ Las pruebas actuales cubren:
 - Eliminación de productos con stock igual a cero.
 - Rechazo de eliminación cuando existe stock.
 - Respuestas de eliminación para productos inexistentes e identificadores inválidos.
+- Identificación de productos con stock menor que cinco.
+- Exclusión de productos con stock igual o mayor que cinco.
+- Paginación de productos por reabastecer.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -491,5 +543,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/delete-product
+feature/restock-products
 ```

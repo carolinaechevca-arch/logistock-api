@@ -5,11 +5,13 @@ import com.logistock.inventory.domain.port.in.CreateProductUseCase;
 import com.logistock.inventory.domain.port.in.DeleteProductUseCase;
 import com.logistock.inventory.domain.port.in.GetProductUseCase;
 import com.logistock.inventory.domain.port.in.ListProductsUseCase;
+import com.logistock.inventory.domain.port.in.ListRestockProductsUseCase;
 import com.logistock.inventory.domain.port.out.ProductRepositoryPort;
 import com.logistock.inventory.domain.usecase.CreateProductService;
 import com.logistock.inventory.domain.usecase.DeleteProductService;
 import com.logistock.inventory.domain.usecase.GetProductService;
 import com.logistock.inventory.domain.usecase.ListProductsService;
+import com.logistock.inventory.domain.usecase.ListRestockProductsService;
 import com.logistock.inventory.infra.adapters.driven.jpa.adapter.ProductRepositoryAdapter;
 import com.logistock.inventory.infra.adapters.driven.jpa.mapper.ProductEntityMapper;
 import com.logistock.inventory.infra.adapters.driven.jpa.repository.SpringDataProductRepository;
@@ -70,6 +72,11 @@ public class ProductUseCaseConfiguration {
     }
 
     @Bean
+    ListRestockProductsUseCase listRestockProductsUseCase(ProductRepositoryPort productRepository) {
+        return new ListRestockProductsService(productRepository);
+    }
+
+    @Bean
     TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
         return new TransactionTemplate(transactionManager);
     }
@@ -88,6 +95,7 @@ public class ProductUseCaseConfiguration {
             CreateProductUseCase createProductUseCase,
             GetProductUseCase getProductUseCase,
             ListProductsUseCase listProductsUseCase,
+            ListRestockProductsUseCase listRestockProductsUseCase,
             DeleteProductUseCase deleteProductUseCase,
             ProductHttpMapper mapper
     ) {
@@ -95,6 +103,7 @@ public class ProductUseCaseConfiguration {
                 createProductUseCase,
                 getProductUseCase,
                 listProductsUseCase,
+                listRestockProductsUseCase,
                 deleteProductUseCase,
                 mapper
         );

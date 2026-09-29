@@ -87,7 +87,8 @@ class ProductControllerIntegrationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/products'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/products'].get").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/products/{id}'].get").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/products/{id}'].delete").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/products/{id}'].delete").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/products/restock'].get").exists());
     }
 
     @Test
@@ -215,6 +216,48 @@ class ProductControllerIntegrationTest {
         mockMvc.perform(delete("/api/v1/products/{id}", 0))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_PRODUCT_ID"));
+    }
+
+    @Test
+    void listsProductsThatRequireRestocking() throws Exception {
+        createProduct("Empty box", "OTHER", 0);
+        createProduct("Low stock scanner", "ELECTRONICS", 4);
+        createProduct("Stock threshold", "FOOD", 5);
+        createProduct("Available chair", "HOME", 20);
+
+        mockMvc.perform(get("/api/v1/products/restock"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].name").value("Empty box"))
+                .andExpect(jsonPath("$.content[0].stock").value(0))
+                .andExpect(jsonPath("$.content[1].name").value("Low stock scanner"))
+                .andExpect(jsonPath("$.content[1].stock").value(4))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void paginatesProductsThatRequireRestocking() throws Exception {
+        createProduct("Empty box", "OTHER", 0);
+        createProduct("Low stock scanner", "ELECTRONICS", 4);
+
+        mockMvc.perform(get("/api/v1/products/restock")
+                        .queryParam("page", "0")
+                        .queryParam("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.last").value(false));
+    }
+
+    @Test
+    void rejectsInvalidRestockPagination() throws Exception {
+        mockMvc.perform(get("/api/v1/products/restock")
+                        .queryParam("size", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PAGINATION"));
     }
 
     private void createProduct() throws Exception {

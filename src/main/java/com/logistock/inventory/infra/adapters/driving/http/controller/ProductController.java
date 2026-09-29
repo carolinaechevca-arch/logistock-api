@@ -7,8 +7,10 @@ import com.logistock.inventory.domain.port.in.CreateProductUseCase;
 import com.logistock.inventory.domain.port.in.DeleteProductUseCase;
 import com.logistock.inventory.domain.port.in.GetProductUseCase;
 import com.logistock.inventory.domain.port.in.ListProductsUseCase;
+import com.logistock.inventory.domain.port.in.ListRestockProductsUseCase;
 import com.logistock.inventory.infra.adapters.driving.http.constants.ApiPaths;
 import com.logistock.inventory.infra.adapters.driving.http.dto.request.CreateProductRequest;
+import com.logistock.inventory.infra.adapters.driving.http.dto.request.PaginationRequest;
 import com.logistock.inventory.infra.adapters.driving.http.dto.request.ProductSearchRequest;
 import com.logistock.inventory.infra.adapters.driving.http.dto.response.PageResponse;
 import com.logistock.inventory.infra.adapters.driving.http.dto.response.ProductResponse;
@@ -44,6 +46,7 @@ public class ProductController {
     private final CreateProductUseCase createProductUseCase;
     private final GetProductUseCase getProductUseCase;
     private final ListProductsUseCase listProductsUseCase;
+    private final ListRestockProductsUseCase listRestockProductsUseCase;
     private final DeleteProductUseCase deleteProductUseCase;
     private final ProductHttpMapper mapper;
 
@@ -126,5 +129,24 @@ public class ProductController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         deleteProductUseCase.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping(ApiPaths.PRODUCTS_RESTOCK)
+    @Operation(summary = "List products that require restocking")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Products listed"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid pagination",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<PageResponse<ProductResponse>> listForRestock(
+            @ParameterObject @ModelAttribute PaginationRequest request
+    ) {
+        PageResult<Product> result = listRestockProductsUseCase.list(
+                mapper.toPaginationCriteria(request)
+        );
+        return ResponseEntity.ok(mapper.toPageResponse(result));
     }
 }
