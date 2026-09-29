@@ -2,7 +2,7 @@
 
 API REST para la gestión de inventario de una empresa de logística. El proyecto busca mantener separadas las reglas del negocio, la entrada HTTP y la persistencia mediante arquitectura hexagonal.
 
-El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos y registrar entradas y salidas de inventario con trazabilidad.
+El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos, registrar entradas y salidas de inventario y consultar su trazabilidad.
 
 ## Estado actual
 
@@ -15,8 +15,9 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 | `DELETE` | `/api/v1/products/{id}` | Implementado | Elimina un producto únicamente cuando su stock es cero |
 | `POST` | `/api/v1/inventory/entries` | Implementado | Registra una entrada e incrementa el stock |
 | `POST` | `/api/v1/inventory/exits` | Implementado | Registra una salida y disminuye el stock |
+| `GET` | `/api/v1/inventory/movements` | Implementado | Lista todos los movimientos de inventario |
 
-Los endpoints de consulta de movimientos y pedidos se implementarán en features posteriores.
+El endpoint de movimientos por producto y los endpoints de pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -631,6 +632,60 @@ Cuando el stock es insuficiente, la API devuelve `409 Conflict`:
 }
 ```
 
+## Listar movimientos de inventario
+
+```http
+GET /api/v1/inventory/movements?page=0&size=10
+```
+
+El endpoint devuelve movimientos `ENTRY` y `EXIT`, ordenados desde el más reciente hasta el más antiguo. Cuando dos movimientos tienen la misma fecha, el identificador descendente garantiza un orden estable.
+
+Parámetros:
+
+| Parámetro | Predeterminado | Descripción |
+| --- | --- | --- |
+| `page` | `0` | Número de página, comenzando en cero |
+| `size` | `10` | Elementos por página, entre 1 y 100 |
+
+Ejemplo:
+
+```bash
+curl --request GET \
+  --url 'http://localhost:8080/api/v1/inventory/movements?page=0&size=10'
+```
+
+Respuesta `200 OK`:
+
+```json
+{
+  "content": [
+    {
+      "id": 2,
+      "productId": 1,
+      "type": "EXIT",
+      "quantity": 5,
+      "createdAt": "2026-09-28T21:00:00Z",
+      "observation": "Customer shipment"
+    },
+    {
+      "id": 1,
+      "productId": 1,
+      "type": "ENTRY",
+      "quantity": 20,
+      "createdAt": "2026-09-28T20:00:00Z",
+      "observation": "Supplier delivery"
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 2,
+  "totalPages": 1,
+  "last": true
+}
+```
+
+Una paginación inválida devuelve `400 Bad Request` con el código `INVALID_PAGINATION`.
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -679,6 +734,9 @@ Las pruebas actuales cubren:
 - Disminución del stock sin permitir valores negativos.
 - Rechazo de salidas superiores al stock disponible.
 - Persistencia de movimientos `EXIT`.
+- Listado paginado de movimientos de inventario.
+- Orden descendente por fecha e identificador.
+- Validación de paginación para la trazabilidad.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -690,5 +748,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/register-inventory-exit
+feature/list-inventory-movements
 ```
