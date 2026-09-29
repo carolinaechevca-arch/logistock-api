@@ -2,16 +2,17 @@
 
 API REST para la gestión de inventario de una empresa de logística. El proyecto busca mantener separadas las reglas del negocio, la entrada HTTP y la persistencia mediante arquitectura hexagonal.
 
-El desarrollo se realiza de forma incremental. Actualmente están implementados los endpoints para crear un producto y consultarlo por identificador.
+El desarrollo se realiza de forma incremental. Actualmente se pueden crear productos, consultarlos por identificador y listarlos con paginación y filtros combinables.
 
 ## Estado actual
 
 | Método | Endpoint | Estado | Descripción |
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/products` | Implementado | Crea un producto en el inventario |
+| `GET` | `/api/v1/products` | Implementado | Lista productos con paginación y filtros |
 | `GET` | `/api/v1/products/{id}` | Implementado | Consulta un producto por identificador |
 
-Los endpoints de consulta, eliminación, movimientos de inventario, reabastecimiento y pedidos se implementarán en features posteriores.
+Los endpoints de eliminación, movimientos de inventario, reabastecimiento y pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -337,6 +338,68 @@ Si el producto no existe, la API devuelve `404 Not Found`:
 
 Los identificadores iguales o menores que cero producen `400 Bad Request` con el código `INVALID_PRODUCT_ID`.
 
+## Listar productos
+
+```http
+GET /api/v1/products
+```
+
+El endpoint acepta los siguientes parámetros opcionales:
+
+| Parámetro | Predeterminado | Descripción |
+| --- | --- | --- |
+| `category` | Sin filtro | Categoría del producto |
+| `minStock` | Sin filtro | Stock mínimo inclusivo |
+| `maxStock` | Sin filtro | Stock máximo inclusivo |
+| `page` | `0` | Número de página, comenzando en cero |
+| `size` | `10` | Elementos por página, entre 1 y 100 |
+
+Los filtros pueden combinarse:
+
+```http
+GET /api/v1/products?category=ELECTRONICS&minStock=5&maxStock=50&page=0&size=10
+```
+
+Ejemplo con cURL:
+
+```bash
+curl --request GET \
+  --url 'http://localhost:8080/api/v1/products?category=ELECTRONICS&minStock=5&maxStock=50&page=0&size=10'
+```
+
+Respuesta `200 OK`:
+
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "name": "Barcode scanner",
+      "description": "Handheld scanner used in warehouse operations",
+      "category": "ELECTRONICS",
+      "stock": 12,
+      "price": 245.90,
+      "createdAt": "2026-09-28T20:00:00Z",
+      "updatedAt": "2026-09-28T20:00:00Z"
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 1,
+  "totalPages": 1,
+  "last": true
+}
+```
+
+Reglas de validación:
+
+- `minStock` y `maxStock` no pueden ser negativos.
+- Cuando ambos están presentes, `minStock` debe ser menor o igual a `maxStock`.
+- `page` debe ser igual o mayor que cero.
+- `size` debe estar entre 1 y 100.
+
+Un rango de stock inválido devuelve `400 Bad Request` con el código `INVALID_STOCK_RANGE`. Una paginación inválida devuelve `400 Bad Request` con el código `INVALID_PAGINATION`.
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -367,6 +430,10 @@ Las pruebas actuales cubren:
 - Consulta de un producto existente por ID.
 - Respuesta `404` para productos inexistentes.
 - Rechazo de identificadores inválidos.
+- Listado paginado de productos.
+- Filtros combinados por categoría y rango de stock.
+- Validación de rangos de stock.
+- Validación de página y tamaño.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -378,5 +445,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/get-product-by-id
+feature/list-products
 ```
