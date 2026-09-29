@@ -2,10 +2,12 @@ package com.logistock.inventory.configuration.beans;
 
 import com.logistock.inventory.domain.port.in.CreateOrderUseCase;
 import com.logistock.inventory.domain.port.in.GetOrderUseCase;
+import com.logistock.inventory.domain.port.in.ListOrdersUseCase;
 import com.logistock.inventory.domain.port.out.OrderRepositoryPort;
 import com.logistock.inventory.domain.port.out.ProductRepositoryPort;
 import com.logistock.inventory.domain.usecase.CreateOrderService;
 import com.logistock.inventory.domain.usecase.GetOrderService;
+import com.logistock.inventory.domain.usecase.ListOrdersService;
 import com.logistock.inventory.infra.adapters.driven.jpa.adapter.OrderRepositoryAdapter;
 import com.logistock.inventory.infra.adapters.driven.jpa.mapper.OrderEntityMapper;
 import com.logistock.inventory.infra.adapters.driven.jpa.repository.SpringDataOrderRepository;
@@ -62,11 +64,26 @@ public class OrderUseCaseConfiguration {
     }
 
     @Bean
+    ListOrdersUseCase listOrdersUseCase(
+            OrderRepositoryPort orderRepository,
+            TransactionTemplate transactionTemplate
+    ) {
+        ListOrdersUseCase service = new ListOrdersService(orderRepository);
+        return criteria -> transactionTemplate.execute(status -> service.list(criteria));
+    }
+
+    @Bean
     OrderController orderController(
             CreateOrderUseCase createOrderUseCase,
             GetOrderUseCase getOrderUseCase,
+            ListOrdersUseCase listOrdersUseCase,
             OrderHttpMapper mapper
     ) {
-        return new OrderController(createOrderUseCase, getOrderUseCase, mapper);
+        return new OrderController(
+                createOrderUseCase,
+                getOrderUseCase,
+                listOrdersUseCase,
+                mapper
+        );
     }
 }
