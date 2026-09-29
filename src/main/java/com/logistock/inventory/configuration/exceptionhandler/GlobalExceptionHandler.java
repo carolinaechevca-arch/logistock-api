@@ -1,6 +1,8 @@
 package com.logistock.inventory.configuration.exceptionhandler;
 
 import com.logistock.inventory.domain.exception.InvalidProductException;
+import com.logistock.inventory.domain.exception.InvalidProductIdException;
+import com.logistock.inventory.domain.exception.ProductNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,34 @@ public class GlobalExceptionHandler {
     ) {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(InvalidProductIdException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidProductId(
+            InvalidProductIdException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleProductNotFound(
+            ProductNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
                 exception.getCode(),
                 exception.getMessage(),
                 request.getRequestURI(),

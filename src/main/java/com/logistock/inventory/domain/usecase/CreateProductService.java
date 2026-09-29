@@ -4,20 +4,17 @@ import com.logistock.inventory.domain.model.Product;
 import com.logistock.inventory.domain.port.in.CreateProductCommand;
 import com.logistock.inventory.domain.port.in.CreateProductUseCase;
 import com.logistock.inventory.domain.port.out.ProductRepositoryPort;
+import lombok.RequiredArgsConstructor;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 
+@RequiredArgsConstructor
 public class CreateProductService implements CreateProductUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final Clock clock;
-
-    public CreateProductService(ProductRepositoryPort productRepository, Clock clock) {
-        this.productRepository = Objects.requireNonNull(productRepository);
-        this.clock = Objects.requireNonNull(clock);
-    }
 
     @Override
     public Product create(CreateProductCommand command) {

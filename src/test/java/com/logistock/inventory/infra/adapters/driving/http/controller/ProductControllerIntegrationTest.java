@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -43,8 +44,11 @@ class ProductControllerIntegrationTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "http://localhost/api/v1/products/1"))
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(header().string(
+                        "Location",
+                        matchesPattern("http://localhost/api/v1/products/\\d+")
+                ))
+                .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.name").value("Barcode scanner"))
                 .andExpect(jsonPath("$.category").value("ELECTRONICS"))
                 .andExpect(jsonPath("$.stock").value(12))
@@ -79,6 +83,53 @@ class ProductControllerIntegrationTest {
     void exposesCreateProductInOpenApi() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paths['/api/v1/products'].post").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/products'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/products/{id}'].get").exists());
+    }
+
+    @Test
+    void getsProductById() throws Exception {
+        createProduct();
+        Long productId = productRepository.findAll().getFirst().getId();
+
+        mockMvc.perform(get("/api/v1/products/{id}", productId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(productId))
+                .andExpect(jsonPath("$.name").value("Barcode scanner"))
+                .andExpect(jsonPath("$.category").value("ELECTRONICS"))
+                .andExpect(jsonPath("$.stock").value(12))
+                .andExpect(jsonPath("$.price").value(245.90));
+    }
+
+    @Test
+    void returnsNotFoundWhenProductDoesNotExist() throws Exception {
+        mockMvc.perform(get("/api/v1/products/{id}", 999999))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("Product not found with id 999999"))
+                .andExpect(jsonPath("$.path").value("/api/v1/products/999999"));
+    }
+
+    @Test
+    void rejectsInvalidProductId() throws Exception {
+        mockMvc.perform(get("/api/v1/products/{id}", 0))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PRODUCT_ID"))
+                .andExpect(jsonPath("$.message").value("Product id must be greater than zero"));
+    }
+
+    private void createProduct() throws Exception {
+        mockMvc.perform(post("/api/v1/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Barcode scanner",
+                                  "description": "Warehouse device",
+                                  "category": "ELECTRONICS",
+                                  "stock": 12,
+                                  "price": 245.90
+                                }
+                                """))
+                .andExpect(status().isCreated());
     }
 }

@@ -7,6 +7,8 @@ import com.logistock.inventory.infra.adapters.driven.jpa.mapper.ProductEntityMap
 import com.logistock.inventory.infra.adapters.driven.jpa.repository.SpringDataProductRepository;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Optional;
+
 @RequiredArgsConstructor
 public class ProductRepositoryAdapter implements ProductRepositoryPort {
 
@@ -17,5 +19,10 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
     public Product save(Product product) {
         ProductEntity savedProduct = repository.save(mapper.toEntity(product));
         return mapper.toDomain(savedProduct);
+    }
+
+    @Override
+    public Optional<Product> findById(Long id) {
+        return repository.findById(id).map(mapper::toDomain);
     }
 }

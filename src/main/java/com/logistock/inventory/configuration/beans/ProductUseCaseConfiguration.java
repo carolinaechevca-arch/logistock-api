@@ -2,8 +2,10 @@ package com.logistock.inventory.configuration.beans;
 
 import com.logistock.inventory.configuration.exceptionhandler.GlobalExceptionHandler;
 import com.logistock.inventory.domain.port.in.CreateProductUseCase;
+import com.logistock.inventory.domain.port.in.GetProductUseCase;
 import com.logistock.inventory.domain.port.out.ProductRepositoryPort;
 import com.logistock.inventory.domain.usecase.CreateProductService;
+import com.logistock.inventory.domain.usecase.GetProductService;
 import com.logistock.inventory.infra.adapters.driven.jpa.adapter.ProductRepositoryAdapter;
 import com.logistock.inventory.infra.adapters.driven.jpa.mapper.ProductEntityMapper;
 import com.logistock.inventory.infra.adapters.driven.jpa.repository.SpringDataProductRepository;
@@ -52,10 +54,16 @@ public class ProductUseCaseConfiguration {
     }
 
     @Bean
+    GetProductUseCase getProductUseCase(ProductRepositoryPort productRepository) {
+        return new GetProductService(productRepository);
+    }
+
+    @Bean
     ProductController productController(
             CreateProductUseCase createProductUseCase,
+            GetProductUseCase getProductUseCase,
             ProductHttpMapper mapper
     ) {
-        return new ProductController(createProductUseCase, mapper);
+        return new ProductController(createProductUseCase, getProductUseCase, mapper);
     }
 }
