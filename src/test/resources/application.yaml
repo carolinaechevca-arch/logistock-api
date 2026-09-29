@@ -5,13 +5,10 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create
     properties:
       hibernate:
         default_schema: inventory
+        hbm2ddl:
+          create_namespaces: true
     open-in-view: false
-  flyway:
-    enabled: true
-    create-schemas: true
-    default-schema: inventory
-    schemas: inventory

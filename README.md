@@ -2,13 +2,14 @@
 
 API REST para la gestión de inventario de una empresa de logística. El proyecto busca mantener separadas las reglas del negocio, la entrada HTTP y la persistencia mediante arquitectura hexagonal.
 
-El desarrollo se realiza de forma incremental. Actualmente está implementado el endpoint de creación de productos.
+El desarrollo se realiza de forma incremental. Actualmente están implementados los endpoints para crear un producto y consultarlo por identificador.
 
 ## Estado actual
 
 | Método | Endpoint | Estado | Descripción |
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/products` | Implementado | Crea un producto en el inventario |
+| `GET` | `/api/v1/products/{id}` | Implementado | Consulta un producto por identificador |
 
 Los endpoints de consulta, eliminación, movimientos de inventario, reabastecimiento y pedidos se implementarán en features posteriores.
 
@@ -20,7 +21,6 @@ Los endpoints de consulta, eliminación, movimientos de inventario, reabastecimi
 - Spring Web MVC
 - Spring Data JPA
 - PostgreSQL
-- Flyway
 - Jakarta Validation
 - MapStruct
 - Lombok
@@ -42,10 +42,10 @@ HTTP Request
 ProductController
      │
      ▼
-CreateProductUseCase
+Product input port
      │
      ▼
-CreateProductService
+Product use case
      │
      ▼
 ProductRepositoryPort
@@ -133,7 +133,7 @@ La aplicación utiliza la siguiente organización:
 - Esquema: `inventory`
 - Tabla actual: `inventory.products`
 
-La base de datos `logistock` debe existir antes de iniciar la aplicación. Flyway crea el esquema `inventory`, crea sus tablas y mantiene el historial de migraciones dentro de ese esquema.
+La base de datos `logistock` debe existir antes de iniciar la aplicación. Hibernate crea el esquema `inventory` y crea o actualiza sus tablas a partir de las entidades JPA.
 
 ### Crear la base de datos
 
@@ -143,7 +143,7 @@ Desde `psql`, con un usuario que tenga permiso para crear bases de datos:
 CREATE DATABASE logistock;
 ```
 
-No es necesario crear manualmente el esquema `inventory` porque Flyway tiene habilitada la opción `create-schemas`.
+No es necesario crear manualmente el esquema `inventory`. La propiedad `hibernate.hbm2ddl.create_namespaces` permite que Hibernate cree el esquema y `ddl-auto: update` crea o actualiza las tablas.
 
 ### Variables de entorno
 
@@ -167,15 +167,23 @@ export DB_PASSWORD=your_password
 
 Las credenciales predeterminadas son únicamente una ayuda para desarrollo local. En otros entornos deben proporcionarse mediante variables de entorno.
 
-### Migraciones
+### Creación del esquema con JPA
 
-La primera migración se encuentra en:
+La configuración utilizada es equivalente a:
 
-```text
-src/main/resources/db/migration/V1__create_products_table.sql
+```yaml
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: inventory
+        hbm2ddl:
+          create_namespaces: true
 ```
 
-Hibernate utiliza `ddl-auto: validate`, por lo que valida el esquema pero no crea ni modifica tablas. La evolución de la base de datos corresponde exclusivamente a Flyway.
+La entidad `ProductEntity` está asociada explícitamente con `inventory.products`. En un ambiente productivo sería recomendable reemplazar `ddl-auto: update` por migraciones versionadas, pero en el alcance actual la estructura se administra exclusivamente mediante JPA/Hibernate.
 
 ## Ejecutar localmente
 
@@ -281,6 +289,54 @@ Ejemplo de respuesta `400 Bad Request`:
 }
 ```
 
+## Consultar un producto por ID
+
+### Request
+
+```http
+GET /api/v1/products/1
+```
+
+Ejemplo con cURL:
+
+```bash
+curl --request GET \
+  --url http://localhost:8080/api/v1/products/1
+```
+
+### Respuesta exitosa
+
+La API devuelve `200 OK` cuando encuentra el producto.
+
+```json
+{
+  "id": 1,
+  "name": "Barcode scanner",
+  "description": "Handheld scanner used in warehouse operations",
+  "category": "ELECTRONICS",
+  "stock": 12,
+  "price": 245.90,
+  "createdAt": "2026-09-28T20:00:00Z",
+  "updatedAt": "2026-09-28T20:00:00Z"
+}
+```
+
+Si el producto no existe, la API devuelve `404 Not Found`:
+
+```json
+{
+  "timestamp": "2026-09-28T20:00:00Z",
+  "status": 404,
+  "error": "Not Found",
+  "code": "PRODUCT_NOT_FOUND",
+  "message": "Product not found with id 10",
+  "path": "/api/v1/products/10",
+  "details": {}
+}
+```
+
+Los identificadores iguales o menores que cero producen `400 Bad Request` con el código `INVALID_PRODUCT_ID`.
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -308,6 +364,9 @@ Las pruebas actuales cubren:
 - Creación de producto desde HTTP.
 - Respuesta HTTP ante datos inválidos.
 - Publicación del endpoint en OpenAPI.
+- Consulta de un producto existente por ID.
+- Respuesta `404` para productos inexistentes.
+- Rechazo de identificadores inválidos.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -319,5 +378,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/create-product-endpoint
+feature/get-product-by-id
 ```
