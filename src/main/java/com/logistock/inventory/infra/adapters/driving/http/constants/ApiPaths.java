@@ -10,6 +10,7 @@ public final class ApiPaths {
     public static final String INVENTORY_EXITS = "/exits";
     public static final String INVENTORY_MOVEMENTS = "/movements";
     public static final String PRODUCT_INVENTORY_MOVEMENTS = "/movements/product/{productId}";
+    public static final String ORDERS = "/api/v1/orders";
 
     private ApiPaths() {
     }

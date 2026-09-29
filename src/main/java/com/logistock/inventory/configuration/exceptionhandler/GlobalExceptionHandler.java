@@ -3,6 +3,7 @@ package com.logistock.inventory.configuration.exceptionhandler;
 import com.logistock.inventory.domain.constants.InventoryConstants;
 import com.logistock.inventory.domain.exception.InvalidProductException;
 import com.logistock.inventory.domain.exception.InvalidInventoryMovementException;
+import com.logistock.inventory.domain.exception.InvalidOrderException;
 import com.logistock.inventory.domain.exception.InvalidProductIdException;
 import com.logistock.inventory.domain.exception.InvalidPaginationException;
 import com.logistock.inventory.domain.exception.InvalidStockRangeException;
@@ -46,6 +47,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidInventoryMovementException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidInventoryMovement(
             InvalidInventoryMovementException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(InvalidOrderException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidOrder(
+            InvalidOrderException exception,
             HttpServletRequest request
     ) {
         return buildResponse(
