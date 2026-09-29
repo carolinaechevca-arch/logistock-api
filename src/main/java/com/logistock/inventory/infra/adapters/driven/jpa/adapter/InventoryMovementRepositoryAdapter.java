@@ -33,13 +33,33 @@ public class InventoryMovementRepositoryAdapter implements InventoryMovementRepo
 
     @Override
     public PageResult<InventoryMovement> findAll(PaginationCriteria criteria) {
+        Page<InventoryMovementEntity> result = movementRepository.findAll(
+                pageable(criteria)
+        );
+        return toPageResult(result);
+    }
+
+    @Override
+    public PageResult<InventoryMovement> findByProductId(
+            Long productId,
+            PaginationCriteria criteria
+    ) {
+        Page<InventoryMovementEntity> result = movementRepository.findByProductId(
+                productId,
+                pageable(criteria)
+        );
+        return toPageResult(result);
+    }
+
+    private PageRequest pageable(PaginationCriteria criteria) {
         Sort sort = Sort.by(
                 Sort.Order.desc(PersistenceConstants.CREATED_AT_ATTRIBUTE),
                 Sort.Order.desc(PersistenceConstants.ID_ATTRIBUTE)
         );
-        Page<InventoryMovementEntity> result = movementRepository.findAll(
-                PageRequest.of(criteria.page(), criteria.size(), sort)
-        );
+        return PageRequest.of(criteria.page(), criteria.size(), sort);
+    }
+
+    private PageResult<InventoryMovement> toPageResult(Page<InventoryMovementEntity> result) {
         return new PageResult<>(
                 result.getContent().stream().map(mapper::toDomain).toList(),
                 result.getNumber(),

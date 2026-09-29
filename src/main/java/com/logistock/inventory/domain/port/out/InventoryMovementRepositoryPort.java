@@ -9,4 +9,9 @@ public interface InventoryMovementRepositoryPort {
     InventoryMovement save(InventoryMovement movement);
 
     PageResult<InventoryMovement> findAll(PaginationCriteria criteria);
+
+    PageResult<InventoryMovement> findByProductId(
+            Long productId,
+            PaginationCriteria criteria
+    );
 }
