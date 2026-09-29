@@ -3,8 +3,10 @@ package com.logistock.inventory.infra.adapters.driving.http.controller;
 import com.logistock.inventory.configuration.exceptionhandler.ApiErrorResponse;
 import com.logistock.inventory.domain.model.InventoryMovement;
 import com.logistock.inventory.domain.port.in.RegisterInventoryEntryUseCase;
+import com.logistock.inventory.domain.port.in.RegisterInventoryExitUseCase;
 import com.logistock.inventory.infra.adapters.driving.http.constants.ApiPaths;
 import com.logistock.inventory.infra.adapters.driving.http.dto.request.RegisterInventoryEntryRequest;
+import com.logistock.inventory.infra.adapters.driving.http.dto.request.RegisterInventoryExitRequest;
 import com.logistock.inventory.infra.adapters.driving.http.dto.response.InventoryMovementResponse;
 import com.logistock.inventory.infra.adapters.driving.http.mapper.InventoryMovementHttpMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class InventoryController {
 
     private final RegisterInventoryEntryUseCase registerInventoryEntryUseCase;
+    private final RegisterInventoryExitUseCase registerInventoryExitUseCase;
     private final InventoryMovementHttpMapper mapper;
 
     @PostMapping(ApiPaths.INVENTORY_ENTRIES)
@@ -51,6 +54,35 @@ public class InventoryController {
     ) {
         InventoryMovement movement = registerInventoryEntryUseCase.register(
                 mapper.toCommand(request)
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(movement));
+    }
+
+    @PostMapping(ApiPaths.INVENTORY_EXITS)
+    @Operation(summary = "Register an inventory exit")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Inventory exit registered"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid inventory exit",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Product not found",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Insufficient stock or concurrent update",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<InventoryMovementResponse> registerExit(
+            @Valid @RequestBody RegisterInventoryExitRequest request
+    ) {
+        InventoryMovement movement = registerInventoryExitUseCase.register(
+                mapper.toExitCommand(request)
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(movement));
     }

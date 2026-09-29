@@ -1,16 +1,19 @@
 package com.logistock.inventory.configuration.exceptionhandler;
 
+import com.logistock.inventory.domain.constants.InventoryConstants;
 import com.logistock.inventory.domain.exception.InvalidProductException;
 import com.logistock.inventory.domain.exception.InvalidInventoryMovementException;
 import com.logistock.inventory.domain.exception.InvalidProductIdException;
 import com.logistock.inventory.domain.exception.InvalidPaginationException;
 import com.logistock.inventory.domain.exception.InvalidStockRangeException;
+import com.logistock.inventory.domain.exception.InsufficientStockException;
 import com.logistock.inventory.domain.exception.ProductNotFoundException;
 import com.logistock.inventory.domain.exception.ProductHasStockException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -49,6 +52,33 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 exception.getCode(),
                 exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ApiErrorResponse> handleInsufficientStock(
+            InsufficientStockException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiErrorResponse> handleConcurrentInventoryUpdate(
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                InventoryConstants.CONCURRENT_INVENTORY_UPDATE,
+                InventoryConstants.CONCURRENT_INVENTORY_UPDATE_MESSAGE,
                 request.getRequestURI(),
                 Map.of()
         );

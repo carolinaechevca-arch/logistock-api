@@ -49,6 +49,22 @@ public record InventoryMovement(
         );
     }
 
+    public static InventoryMovement exit(
+            Long productId,
+            int quantity,
+            Instant createdAt,
+            String observation
+    ) {
+        return new InventoryMovement(
+                null,
+                productId,
+                InventoryMovementType.EXIT,
+                quantity,
+                createdAt,
+                observation
+        );
+    }
+
     private static String normalizeObservation(String observation) {
         if (observation == null || observation.isBlank()) {
             return null;

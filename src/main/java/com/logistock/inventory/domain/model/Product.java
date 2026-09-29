@@ -5,6 +5,7 @@ import com.logistock.inventory.domain.enums.ProductCategory;
 import com.logistock.inventory.domain.exception.InvalidProductException;
 import com.logistock.inventory.domain.constants.InventoryConstants;
 import com.logistock.inventory.domain.exception.InvalidInventoryMovementException;
+import com.logistock.inventory.domain.exception.InsufficientStockException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -53,6 +54,28 @@ public record Product(
                 description,
                 category,
                 Math.addExact(stock, quantity),
+                price,
+                createdAt,
+                now,
+                version
+        );
+    }
+
+    public Product decreaseStock(int quantity, Instant now) {
+        if (quantity < InventoryConstants.MINIMUM_MOVEMENT_QUANTITY) {
+            throw new InvalidInventoryMovementException(
+                    InventoryConstants.INVALID_MOVEMENT_QUANTITY_MESSAGE
+            );
+        }
+        if (quantity > stock) {
+            throw new InsufficientStockException(id, stock, quantity);
+        }
+        return new Product(
+                id,
+                name,
+                description,
+                category,
+                stock - quantity,
                 price,
                 createdAt,
                 now,

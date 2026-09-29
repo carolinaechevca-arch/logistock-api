@@ -36,4 +36,18 @@ class InventoryMovementTest {
                 .isInstanceOf(InvalidInventoryMovementException.class)
                 .hasMessage("Inventory movement quantity must be greater than zero");
     }
+
+    @Test
+    void createsInventoryExit() {
+        InventoryMovement movement = InventoryMovement.exit(
+                10L,
+                3,
+                NOW,
+                "Customer shipment"
+        );
+
+        assertThat(movement.type()).isEqualTo(InventoryMovementType.EXIT);
+        assertThat(movement.quantity()).isEqualTo(3);
+        assertThat(movement.observation()).isEqualTo("Customer shipment");
+    }
 }
