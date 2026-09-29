@@ -147,6 +147,7 @@ class OrderControllerIntegrationTest {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/v1/orders'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/orders'].get").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/orders/{id}'].get").exists());
     }
 
@@ -179,6 +180,45 @@ class OrderControllerIntegrationTest {
         mockMvc.perform(get("/api/v1/orders/{id}", 0))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_ORDER_ID"));
+    }
+
+    @Test
+    void listsOrdersFromNewestToOldest() throws Exception {
+        Long firstProductId = createProduct("Barcode scanner", 12);
+        Long secondProductId = createProduct("Warehouse tablet", 7);
+        createOrder(firstProductId, 3);
+        Long newestOrderId = createOrder(secondProductId, 2);
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .queryParam("page", "0")
+                        .queryParam("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(newestOrderId))
+                .andExpect(jsonPath("$.content[0].status").value("CREATED"))
+                .andExpect(jsonPath("$.content[0].items.length()").value(1))
+                .andExpect(jsonPath("$.content[0].items[0].productId").value(secondProductId))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.last").value(false));
+    }
+
+    @Test
+    void returnsEmptyOrderPage() throws Exception {
+        mockMvc.perform(get("/api/v1/orders"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(0))
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.last").value(true));
+    }
+
+    @Test
+    void rejectsInvalidOrderPagination() throws Exception {
+        mockMvc.perform(get("/api/v1/orders").queryParam("size", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PAGINATION"));
     }
 
     private Long createProduct(String name, int stock) throws Exception {

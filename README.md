@@ -18,9 +18,10 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 | `GET` | `/api/v1/inventory/movements` | Implementado | Lista todos los movimientos de inventario |
 | `GET` | `/api/v1/inventory/movements/product/{productId}` | Implementado | Lista los movimientos de un producto |
 | `POST` | `/api/v1/orders` | Implementado | Crea un pedido en estado `CREATED` |
+| `GET` | `/api/v1/orders` | Implementado | Lista pedidos de forma paginada |
 | `GET` | `/api/v1/orders/{id}` | Implementado | Consulta un pedido con todos sus ítems |
 
-El listado, la confirmación y la cancelación de pedidos se implementarán en features posteriores.
+La confirmación y la cancelación de pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -854,6 +855,56 @@ Respuesta `200 OK`:
 
 El pedido se devuelve con todos sus ítems. Un identificador igual o menor que cero produce `400 Bad Request` con `INVALID_ORDER_ID`. Si el pedido no existe, la respuesta es `404 Not Found` con `ORDER_NOT_FOUND`.
 
+## Listar pedidos
+
+```http
+GET /api/v1/orders?page=0&size=10
+```
+
+Los pedidos se devuelven desde el más reciente hasta el más antiguo. Cuando dos pedidos tienen la misma fecha, el identificador descendente garantiza un orden estable. Cada elemento incluye todos los ítems del pedido.
+
+Parámetros:
+
+| Parámetro | Predeterminado | Descripción |
+| --- | --- | --- |
+| `page` | `0` | Número de página, comenzando en cero |
+| `size` | `10` | Elementos por página, entre 1 y 100 |
+
+Ejemplo con cURL:
+
+```bash
+curl --request GET \
+  --url 'http://localhost:8080/api/v1/orders?page=0&size=10'
+```
+
+Respuesta `200 OK`:
+
+```json
+{
+  "content": [
+    {
+      "id": 2,
+      "createdAt": "2026-09-28T22:30:00Z",
+      "status": "CREATED",
+      "items": [
+        {
+          "id": 2,
+          "productId": 1,
+          "quantity": 2
+        }
+      ]
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 1,
+  "totalPages": 1,
+  "last": true
+}
+```
+
+Si no existen pedidos se devuelve una página vacía. Una paginación inválida produce `400 Bad Request` con `INVALID_PAGINATION`.
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -920,6 +971,11 @@ Las pruebas actuales cubren:
 - Respuesta `404` para pedidos inexistentes.
 - Rechazo de identificadores de pedido inválidos.
 - Publicación de la consulta de pedidos en OpenAPI.
+- Listado paginado de pedidos con todos sus ítems.
+- Orden descendente por fecha e identificador.
+- Página vacía cuando no existen pedidos.
+- Validación de la paginación de pedidos.
+- Publicación del listado de pedidos en OpenAPI.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -931,5 +987,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/get-order
+feature/list-orders
 ```
