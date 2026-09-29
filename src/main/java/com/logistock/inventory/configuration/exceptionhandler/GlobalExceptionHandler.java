@@ -2,6 +2,8 @@ package com.logistock.inventory.configuration.exceptionhandler;
 
 import com.logistock.inventory.domain.exception.InvalidProductException;
 import com.logistock.inventory.domain.exception.InvalidProductIdException;
+import com.logistock.inventory.domain.exception.InvalidPaginationException;
+import com.logistock.inventory.domain.exception.InvalidStockRangeException;
 import com.logistock.inventory.domain.exception.ProductNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +59,34 @@ public class GlobalExceptionHandler {
     ) {
         return buildResponse(
                 HttpStatus.NOT_FOUND,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(InvalidStockRangeException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidStockRange(
+            InvalidStockRangeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(InvalidPaginationException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidPagination(
+            InvalidPaginationException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
                 exception.getCode(),
                 exception.getMessage(),
                 request.getRequestURI(),
