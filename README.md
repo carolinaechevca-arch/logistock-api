@@ -2,7 +2,7 @@
 
 API REST para la gestión de inventario de una empresa de logística. El proyecto busca mantener separadas las reglas del negocio, la entrada HTTP y la persistencia mediante arquitectura hexagonal.
 
-El desarrollo se realiza de forma incremental. Actualmente se pueden crear productos, consultarlos por identificador y listarlos con paginación y filtros combinables.
+El desarrollo se realiza de forma incremental. Actualmente se pueden crear productos, consultarlos, listarlos con filtros y eliminar los que no tengan stock.
 
 ## Estado actual
 
@@ -11,8 +11,9 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden crear produ
 | `POST` | `/api/v1/products` | Implementado | Crea un producto en el inventario |
 | `GET` | `/api/v1/products` | Implementado | Lista productos con paginación y filtros |
 | `GET` | `/api/v1/products/{id}` | Implementado | Consulta un producto por identificador |
+| `DELETE` | `/api/v1/products/{id}` | Implementado | Elimina un producto únicamente cuando su stock es cero |
 
-Los endpoints de eliminación, movimientos de inventario, reabastecimiento y pedidos se implementarán en features posteriores.
+Los endpoints de movimientos de inventario, reabastecimiento y pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -99,6 +100,10 @@ Lombok se utiliza únicamente para reducir código repetitivo, principalmente co
 ### Concurrencia
 
 La tabla y la entidad de productos incluyen el campo `version` con `@Version`. Esto deja preparado el control optimista de concurrencia para los futuros movimientos que modifiquen el stock.
+
+### Transacciones
+
+La consulta, validación de stock y eliminación del producto se ejecutan dentro de una misma transacción. El dominio continúa desacoplado de Spring: la transacción se aplica desde la configuración mediante `TransactionTemplate` y el caso de uso se registra con `@Bean`.
 
 ## Modelo de producto
 
@@ -400,6 +405,44 @@ Reglas de validación:
 
 Un rango de stock inválido devuelve `400 Bad Request` con el código `INVALID_STOCK_RANGE`. Una paginación inválida devuelve `400 Bad Request` con el código `INVALID_PAGINATION`.
 
+## Eliminar un producto
+
+```http
+DELETE /api/v1/products/{id}
+```
+
+Solo se puede eliminar un producto cuyo stock actual sea igual a cero.
+
+Ejemplo:
+
+```bash
+curl --request DELETE \
+  --url http://localhost:8080/api/v1/products/1
+```
+
+Respuestas:
+
+| Estado | Descripción |
+| --- | --- |
+| `204 No Content` | El producto fue eliminado |
+| `400 Bad Request` | El identificador es inválido |
+| `404 Not Found` | El producto no existe |
+| `409 Conflict` | El producto todavía tiene stock |
+
+Ejemplo de conflicto:
+
+```json
+{
+  "timestamp": "2026-09-28T20:00:00Z",
+  "status": 409,
+  "error": "Conflict",
+  "code": "PRODUCT_HAS_STOCK",
+  "message": "Product 1 cannot be deleted because it has 5 units in stock",
+  "path": "/api/v1/products/1",
+  "details": {}
+}
+```
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -434,6 +477,9 @@ Las pruebas actuales cubren:
 - Filtros combinados por categoría y rango de stock.
 - Validación de rangos de stock.
 - Validación de página y tamaño.
+- Eliminación de productos con stock igual a cero.
+- Rechazo de eliminación cuando existe stock.
+- Respuestas de eliminación para productos inexistentes e identificadores inválidos.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -445,5 +491,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/list-products
+feature/delete-product
 ```

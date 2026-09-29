@@ -53,4 +53,9 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
                 result.isLast()
         );
     }
+
+    @Override
+    public void delete(Product product) {
+        repository.delete(mapper.toEntity(product));
+    }
 }

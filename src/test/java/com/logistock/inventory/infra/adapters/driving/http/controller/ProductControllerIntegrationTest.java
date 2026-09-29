@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -85,7 +86,8 @@ class ProductControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/v1/products'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/products'].get").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/products/{id}'].get").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/products/{id}'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/products/{id}'].delete").exists());
     }
 
     @Test
@@ -172,6 +174,47 @@ class ProductControllerIntegrationTest {
                         .queryParam("size", "10"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_PAGINATION"));
+    }
+
+    @Test
+    void deletesProductWithZeroStock() throws Exception {
+        createProduct("Empty box", "OTHER", 0);
+        Long productId = productRepository.findAll().getFirst().getId();
+
+        mockMvc.perform(delete("/api/v1/products/{id}", productId))
+                .andExpect(status().isNoContent());
+
+        assertThat(productRepository.findById(productId)).isEmpty();
+    }
+
+    @Test
+    void rejectsDeletionWhenProductHasStock() throws Exception {
+        createProduct("Scanner", "ELECTRONICS", 5);
+        Long productId = productRepository.findAll().getFirst().getId();
+
+        mockMvc.perform(delete("/api/v1/products/{id}", productId))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("PRODUCT_HAS_STOCK"))
+                .andExpect(jsonPath("$.message").value(
+                        "Product %d cannot be deleted because it has 5 units in stock"
+                                .formatted(productId)
+                ));
+
+        assertThat(productRepository.findById(productId)).isPresent();
+    }
+
+    @Test
+    void returnsNotFoundWhenDeletingMissingProduct() throws Exception {
+        mockMvc.perform(delete("/api/v1/products/{id}", 999999))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"));
+    }
+
+    @Test
+    void rejectsInvalidProductIdWhenDeleting() throws Exception {
+        mockMvc.perform(delete("/api/v1/products/{id}", 0))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PRODUCT_ID"));
     }
 
     private void createProduct() throws Exception {

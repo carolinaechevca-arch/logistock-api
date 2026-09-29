@@ -5,6 +5,7 @@ import com.logistock.inventory.domain.exception.InvalidProductIdException;
 import com.logistock.inventory.domain.exception.InvalidPaginationException;
 import com.logistock.inventory.domain.exception.InvalidStockRangeException;
 import com.logistock.inventory.domain.exception.ProductNotFoundException;
+import com.logistock.inventory.domain.exception.ProductHasStockException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -87,6 +88,20 @@ public class GlobalExceptionHandler {
     ) {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(ProductHasStockException.class)
+    public ResponseEntity<ApiErrorResponse> handleProductHasStock(
+            ProductHasStockException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
                 exception.getCode(),
                 exception.getMessage(),
                 request.getRequestURI(),

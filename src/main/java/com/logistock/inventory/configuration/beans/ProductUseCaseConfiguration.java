@@ -2,10 +2,12 @@ package com.logistock.inventory.configuration.beans;
 
 import com.logistock.inventory.configuration.exceptionhandler.GlobalExceptionHandler;
 import com.logistock.inventory.domain.port.in.CreateProductUseCase;
+import com.logistock.inventory.domain.port.in.DeleteProductUseCase;
 import com.logistock.inventory.domain.port.in.GetProductUseCase;
 import com.logistock.inventory.domain.port.in.ListProductsUseCase;
 import com.logistock.inventory.domain.port.out.ProductRepositoryPort;
 import com.logistock.inventory.domain.usecase.CreateProductService;
+import com.logistock.inventory.domain.usecase.DeleteProductService;
 import com.logistock.inventory.domain.usecase.GetProductService;
 import com.logistock.inventory.domain.usecase.ListProductsService;
 import com.logistock.inventory.infra.adapters.driven.jpa.adapter.ProductRepositoryAdapter;
@@ -16,6 +18,8 @@ import com.logistock.inventory.infra.adapters.driving.http.mapper.ProductHttpMap
 import org.mapstruct.factory.Mappers;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 
@@ -66,16 +70,32 @@ public class ProductUseCaseConfiguration {
     }
 
     @Bean
+    TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
+    }
+
+    @Bean
+    DeleteProductUseCase deleteProductUseCase(
+            ProductRepositoryPort productRepository,
+            TransactionTemplate transactionTemplate
+    ) {
+        DeleteProductUseCase service = new DeleteProductService(productRepository);
+        return id -> transactionTemplate.executeWithoutResult(status -> service.deleteById(id));
+    }
+
+    @Bean
     ProductController productController(
             CreateProductUseCase createProductUseCase,
             GetProductUseCase getProductUseCase,
             ListProductsUseCase listProductsUseCase,
+            DeleteProductUseCase deleteProductUseCase,
             ProductHttpMapper mapper
     ) {
         return new ProductController(
                 createProductUseCase,
                 getProductUseCase,
                 listProductsUseCase,
+                deleteProductUseCase,
                 mapper
         );
     }
