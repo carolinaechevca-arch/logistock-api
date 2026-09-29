@@ -9,6 +9,7 @@ public final class ProductConstants {
     public static final int PRICE_SCALE = 2;
     public static final int MINIMUM_STOCK = 0;
     public static final int RESTOCK_THRESHOLD = 5;
+    public static final int RESTOCK_MAXIMUM_STOCK = RESTOCK_THRESHOLD - 1;
     public static final int DEFAULT_PAGE = 0;
     public static final int DEFAULT_PAGE_SIZE = 10;
     public static final int MAX_PAGE_SIZE = 100;

@@ -1,10 +1,12 @@
 package com.logistock.inventory.infra.adapters.driving.http.mapper;
 
 import com.logistock.inventory.domain.model.PageResult;
+import com.logistock.inventory.domain.model.PaginationCriteria;
 import com.logistock.inventory.domain.model.Product;
 import com.logistock.inventory.domain.model.ProductSearchCriteria;
 import com.logistock.inventory.domain.port.in.CreateProductCommand;
 import com.logistock.inventory.infra.adapters.driving.http.dto.request.CreateProductRequest;
+import com.logistock.inventory.infra.adapters.driving.http.dto.request.PaginationRequest;
 import com.logistock.inventory.infra.adapters.driving.http.dto.request.ProductSearchRequest;
 import com.logistock.inventory.infra.adapters.driving.http.dto.response.PageResponse;
 import com.logistock.inventory.infra.adapters.driving.http.dto.response.ProductResponse;
@@ -19,6 +21,8 @@ public interface ProductHttpMapper {
     ProductResponse toResponse(Product product);
 
     ProductSearchCriteria toCriteria(ProductSearchRequest request);
+
+    PaginationCriteria toPaginationCriteria(PaginationRequest request);
 
     default PageResponse<ProductResponse> toPageResponse(PageResult<Product> page) {
         return new PageResponse<>(
