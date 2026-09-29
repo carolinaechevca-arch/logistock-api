@@ -1,0 +1,57 @@
+package com.logistock.inventory.infra.adapters.driving.http.controller;
+
+import com.logistock.inventory.configuration.exceptionhandler.ApiErrorResponse;
+import com.logistock.inventory.domain.model.InventoryMovement;
+import com.logistock.inventory.domain.port.in.RegisterInventoryEntryUseCase;
+import com.logistock.inventory.infra.adapters.driving.http.constants.ApiPaths;
+import com.logistock.inventory.infra.adapters.driving.http.dto.request.RegisterInventoryEntryRequest;
+import com.logistock.inventory.infra.adapters.driving.http.dto.response.InventoryMovementResponse;
+import com.logistock.inventory.infra.adapters.driving.http.mapper.InventoryMovementHttpMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(ApiPaths.INVENTORY)
+@Tag(name = "Inventory", description = "Inventory movement management")
+@RequiredArgsConstructor
+public class InventoryController {
+
+    private final RegisterInventoryEntryUseCase registerInventoryEntryUseCase;
+    private final InventoryMovementHttpMapper mapper;
+
+    @PostMapping(ApiPaths.INVENTORY_ENTRIES)
+    @Operation(summary = "Register an inventory entry")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Inventory entry registered"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid inventory entry",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Product not found",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<InventoryMovementResponse> registerEntry(
+            @Valid @RequestBody RegisterInventoryEntryRequest request
+    ) {
+        InventoryMovement movement = registerInventoryEntryUseCase.register(
+                mapper.toCommand(request)
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(movement));
+    }
+}
