@@ -4,6 +4,7 @@ import com.logistock.inventory.configuration.exceptionhandler.ApiErrorResponse;
 import com.logistock.inventory.domain.model.PageResult;
 import com.logistock.inventory.domain.model.Product;
 import com.logistock.inventory.domain.port.in.CreateProductUseCase;
+import com.logistock.inventory.domain.port.in.DeleteProductUseCase;
 import com.logistock.inventory.domain.port.in.GetProductUseCase;
 import com.logistock.inventory.domain.port.in.ListProductsUseCase;
 import com.logistock.inventory.infra.adapters.driving.http.constants.ApiPaths;
@@ -23,6 +24,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,6 +44,7 @@ public class ProductController {
     private final CreateProductUseCase createProductUseCase;
     private final GetProductUseCase getProductUseCase;
     private final ListProductsUseCase listProductsUseCase;
+    private final DeleteProductUseCase deleteProductUseCase;
     private final ProductHttpMapper mapper;
 
     @PostMapping
@@ -98,5 +101,30 @@ public class ProductController {
     ) {
         PageResult<Product> result = listProductsUseCase.list(mapper.toCriteria(request));
         return ResponseEntity.ok(mapper.toPageResponse(result));
+    }
+
+    @DeleteMapping(ApiPaths.PRODUCT_BY_ID)
+    @Operation(summary = "Delete a product with zero stock")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Product deleted"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid product id",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Product not found",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Product has stock",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        deleteProductUseCase.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

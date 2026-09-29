@@ -13,4 +13,6 @@ public interface ProductRepositoryPort {
     Optional<Product> findById(Long id);
 
     PageResult<Product> findAll(ProductSearchCriteria criteria);
+
+    void delete(Product product);
 }

@@ -22,6 +22,7 @@ public final class ProductConstants {
     public static final String PRODUCT_NOT_FOUND = "PRODUCT_NOT_FOUND";
     public static final String INVALID_STOCK_RANGE = "INVALID_STOCK_RANGE";
     public static final String INVALID_PAGINATION = "INVALID_PAGINATION";
+    public static final String PRODUCT_HAS_STOCK = "PRODUCT_HAS_STOCK";
 
     public static final String PRODUCT_NAME_REQUIRED_MESSAGE = "Product name is required";
     public static final String PRODUCT_CATEGORY_REQUIRED_MESSAGE = "Product category is required";
@@ -35,6 +36,8 @@ public final class ProductConstants {
     public static final String NEGATIVE_STOCK_FILTER_MESSAGE = "Stock filters cannot be negative";
     public static final String INVALID_PAGINATION_MESSAGE =
             "Page must be zero or greater and size must be between 1 and 100";
+    public static final String PRODUCT_HAS_STOCK_MESSAGE =
+            "Product %d cannot be deleted because it has %d units in stock";
 
     private ProductConstants() {
     }
