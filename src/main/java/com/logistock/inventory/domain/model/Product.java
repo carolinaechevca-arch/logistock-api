@@ -3,6 +3,8 @@ package com.logistock.inventory.domain.model;
 import com.logistock.inventory.domain.constants.ProductConstants;
 import com.logistock.inventory.domain.enums.ProductCategory;
 import com.logistock.inventory.domain.exception.InvalidProductException;
+import com.logistock.inventory.domain.constants.InventoryConstants;
+import com.logistock.inventory.domain.exception.InvalidInventoryMovementException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -37,6 +39,25 @@ public record Product(
             Instant now
     ) {
         return new Product(null, name, description, category, stock, price, now, now, null);
+    }
+
+    public Product increaseStock(int quantity, Instant now) {
+        if (quantity < InventoryConstants.MINIMUM_MOVEMENT_QUANTITY) {
+            throw new InvalidInventoryMovementException(
+                    InventoryConstants.INVALID_MOVEMENT_QUANTITY_MESSAGE
+            );
+        }
+        return new Product(
+                id,
+                name,
+                description,
+                category,
+                Math.addExact(stock, quantity),
+                price,
+                createdAt,
+                now,
+                version
+        );
     }
 
     private static String normalizeRequiredName(String name) {

@@ -2,7 +2,7 @@
 
 API REST para la gestión de inventario de una empresa de logística. El proyecto busca mantener separadas las reglas del negocio, la entrada HTTP y la persistencia mediante arquitectura hexagonal.
 
-El desarrollo se realiza de forma incremental. Actualmente se pueden crear productos, consultarlos, listarlos con filtros, identificar los que requieren reabastecimiento y eliminar los que no tengan stock.
+El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos y registrar entradas de inventario con trazabilidad.
 
 ## Estado actual
 
@@ -13,8 +13,9 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden crear produ
 | `GET` | `/api/v1/products/{id}` | Implementado | Consulta un producto por identificador |
 | `GET` | `/api/v1/products/restock` | Implementado | Lista productos con stock menor que cinco |
 | `DELETE` | `/api/v1/products/{id}` | Implementado | Elimina un producto únicamente cuando su stock es cero |
+| `POST` | `/api/v1/inventory/entries` | Implementado | Registra una entrada e incrementa el stock |
 
-Los endpoints de movimientos de inventario y pedidos se implementarán en features posteriores.
+Los endpoints de salidas, consultas de movimientos y pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -42,19 +43,19 @@ La aplicación sigue una arquitectura hexagonal:
 HTTP Request
      │
      ▼
-ProductController
+HTTP Controller
      │
      ▼
-Product input port
+Input port
      │
      ▼
-Product use case
+Use case
      │
      ▼
-ProductRepositoryPort
+Output port
      │
      ▼
-ProductRepositoryAdapter
+JPA adapter
      │
      ▼
 Spring Data JPA ─────► PostgreSQL
@@ -91,6 +92,9 @@ MapStruct genera en compilación los mappers entre:
 - `CreateProductRequest` y `CreateProductCommand`.
 - `Product` y `ProductResponse`.
 - `Product` y `ProductEntity`.
+- `RegisterInventoryEntryRequest` y `RegisterInventoryEntryCommand`.
+- `InventoryMovement` y `InventoryMovementResponse`.
+- `InventoryMovement` y `InventoryMovementEntity`.
 
 Los mappers HTTP no conocen entidades JPA y los mappers de persistencia no conocen DTO HTTP.
 
@@ -104,7 +108,7 @@ La tabla y la entidad de productos incluyen el campo `version` con `@Version`. E
 
 ### Transacciones
 
-La consulta, validación de stock y eliminación del producto se ejecutan dentro de una misma transacción. El dominio continúa desacoplado de Spring: la transacción se aplica desde la configuración mediante `TransactionTemplate` y el caso de uso se registra con `@Bean`.
+La consulta, validación de stock y eliminación del producto se ejecutan dentro de una misma transacción. Una entrada de inventario también actualiza el producto y registra el movimiento dentro de una sola transacción, evitando que uno de los dos cambios quede persistido sin el otro. El dominio continúa desacoplado de Spring: las transacciones se aplican desde la configuración mediante `TransactionTemplate` y los casos de uso se registran con `@Bean`.
 
 ## Modelo de producto
 
@@ -132,13 +136,28 @@ Categorías disponibles:
 
 Las restricciones importantes se validan tanto en la frontera HTTP como dentro del dominio. De esta manera, las reglas no dependen exclusivamente de `@Valid`.
 
+## Modelo de movimiento de inventario
+
+Cada movimiento contiene:
+
+| Campo | Tipo | Regla |
+| --- | --- | --- |
+| `id` | `Long` | Generado por la base de datos |
+| `productId` | `Long` | Producto asociado al movimiento |
+| `type` | `InventoryMovementType` | `ENTRY` para la feature actual |
+| `quantity` | `int` | Debe ser mayor que cero |
+| `createdAt` | `Instant` | Fecha UTC generada por la aplicación |
+| `observation` | `String` | Opcional, máximo 500 caracteres |
+
+Cada entrada incrementa el stock y conserva un registro separado para garantizar la trazabilidad.
+
 ## PostgreSQL
 
 La aplicación utiliza la siguiente organización:
 
 - Base de datos: `logistock`
 - Esquema: `inventory`
-- Tabla actual: `inventory.products`
+- Tablas actuales: `inventory.products` e `inventory.inventory_movements`
 
 La base de datos `logistock` debe existir antes de iniciar la aplicación. Hibernate crea el esquema `inventory` y crea o actualiza sus tablas a partir de las entidades JPA.
 
@@ -190,7 +209,7 @@ spring:
           create_namespaces: true
 ```
 
-La entidad `ProductEntity` está asociada explícitamente con `inventory.products`. En un ambiente productivo sería recomendable reemplazar `ddl-auto: update` por migraciones versionadas, pero en el alcance actual la estructura se administra exclusivamente mediante JPA/Hibernate.
+Las entidades están asociadas explícitamente con `inventory.products` e `inventory.inventory_movements`. La columna `product_id` de movimientos mantiene la relación con el producto. En un ambiente productivo sería recomendable reemplazar `ddl-auto: update` por migraciones versionadas, pero en el alcance actual la estructura se administra exclusivamente mediante JPA/Hibernate.
 
 ## Ejecutar localmente
 
@@ -492,6 +511,59 @@ Respuesta `200 OK`:
 
 Una paginación inválida devuelve `400 Bad Request` con el código `INVALID_PAGINATION`.
 
+## Registrar una entrada de inventario
+
+```http
+POST /api/v1/inventory/entries
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "productId": 1,
+  "quantity": 20,
+  "observation": "Supplier delivery"
+}
+```
+
+Ejemplo con cURL:
+
+```bash
+curl --request POST \
+  --url http://localhost:8080/api/v1/inventory/entries \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "productId": 1,
+    "quantity": 20,
+    "observation": "Supplier delivery"
+  }'
+```
+
+Respuesta `201 Created`:
+
+```json
+{
+  "id": 1,
+  "productId": 1,
+  "type": "ENTRY",
+  "quantity": 20,
+  "createdAt": "2026-09-28T20:00:00Z",
+  "observation": "Supplier delivery"
+}
+```
+
+Reglas:
+
+- El producto debe existir.
+- La cantidad debe ser mayor que cero.
+- La entrada incrementa el stock del producto.
+- La actualización del stock y el movimiento se guardan en una misma transacción.
+- La observación es opcional y admite máximo 500 caracteres.
+
+Una petición inválida devuelve `400 Bad Request`. Un producto inexistente devuelve `404 Not Found` con el código `PRODUCT_NOT_FOUND`.
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -532,6 +604,10 @@ Las pruebas actuales cubren:
 - Identificación de productos con stock menor que cinco.
 - Exclusión de productos con stock igual o mayor que cinco.
 - Paginación de productos por reabastecer.
+- Registro de entradas de inventario.
+- Incremento del stock asociado.
+- Persistencia de la trazabilidad del movimiento.
+- Rechazo de cantidades no positivas y productos inexistentes.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -543,5 +619,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/restock-products
+feature/register-inventory-entry
 ```
