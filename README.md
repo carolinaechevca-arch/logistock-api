@@ -2,7 +2,7 @@
 
 API REST para la gestión de inventario de una empresa de logística. El proyecto busca mantener separadas las reglas del negocio, la entrada HTTP y la persistencia mediante arquitectura hexagonal.
 
-El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos, registrar entradas y salidas de inventario y consultar su trazabilidad.
+El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos, registrar entradas y salidas de inventario y consultar la trazabilidad global o por producto.
 
 ## Estado actual
 
@@ -16,8 +16,9 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 | `POST` | `/api/v1/inventory/entries` | Implementado | Registra una entrada e incrementa el stock |
 | `POST` | `/api/v1/inventory/exits` | Implementado | Registra una salida y disminuye el stock |
 | `GET` | `/api/v1/inventory/movements` | Implementado | Lista todos los movimientos de inventario |
+| `GET` | `/api/v1/inventory/movements/product/{productId}` | Implementado | Lista los movimientos de un producto |
 
-El endpoint de movimientos por producto y los endpoints de pedidos se implementarán en features posteriores.
+Los endpoints de pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -513,6 +514,50 @@ Respuesta `200 OK`:
 
 Una paginación inválida devuelve `400 Bad Request` con el código `INVALID_PAGINATION`.
 
+## Listar movimientos por producto
+
+```http
+GET /api/v1/inventory/movements/product/{productId}?page=0&size=10
+```
+
+El endpoint devuelve únicamente los movimientos relacionados con el producto solicitado, desde el más reciente hasta el más antiguo.
+
+Ejemplo:
+
+```bash
+curl --request GET \
+  --url 'http://localhost:8080/api/v1/inventory/movements/product/1?page=0&size=10'
+```
+
+Respuesta `200 OK`:
+
+```json
+{
+  "content": [
+    {
+      "id": 2,
+      "productId": 1,
+      "type": "EXIT",
+      "quantity": 5,
+      "createdAt": "2026-09-28T21:00:00Z",
+      "observation": "Customer shipment"
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 1,
+  "totalPages": 1,
+  "last": true
+}
+```
+
+Comportamiento:
+
+- Un producto existente sin movimientos devuelve `200 OK` con `content` vacío.
+- Un identificador igual o menor que cero devuelve `400 Bad Request` con `INVALID_PRODUCT_ID`.
+- Un producto inexistente devuelve `404 Not Found` con `PRODUCT_NOT_FOUND`.
+- Una paginación inválida devuelve `400 Bad Request` con `INVALID_PAGINATION`.
+
 ## Registrar una entrada de inventario
 
 ```http
@@ -737,6 +782,10 @@ Las pruebas actuales cubren:
 - Listado paginado de movimientos de inventario.
 - Orden descendente por fecha e identificador.
 - Validación de paginación para la trazabilidad.
+- Listado paginado de movimientos por producto.
+- Aislamiento de movimientos pertenecientes a otros productos.
+- Página vacía para productos sin movimientos.
+- Validación de producto existente e identificador válido.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -748,5 +797,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/list-inventory-movements
+feature/list-product-inventory-movements
 ```

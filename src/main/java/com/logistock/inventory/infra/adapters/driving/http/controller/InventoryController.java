@@ -4,6 +4,7 @@ import com.logistock.inventory.configuration.exceptionhandler.ApiErrorResponse;
 import com.logistock.inventory.domain.model.InventoryMovement;
 import com.logistock.inventory.domain.model.PageResult;
 import com.logistock.inventory.domain.port.in.ListInventoryMovementsUseCase;
+import com.logistock.inventory.domain.port.in.ListProductInventoryMovementsUseCase;
 import com.logistock.inventory.domain.port.in.RegisterInventoryEntryUseCase;
 import com.logistock.inventory.domain.port.in.RegisterInventoryExitUseCase;
 import com.logistock.inventory.infra.adapters.driving.http.constants.ApiPaths;
@@ -27,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,6 +42,7 @@ public class InventoryController {
     private final RegisterInventoryEntryUseCase registerInventoryEntryUseCase;
     private final RegisterInventoryExitUseCase registerInventoryExitUseCase;
     private final ListInventoryMovementsUseCase listInventoryMovementsUseCase;
+    private final ListProductInventoryMovementsUseCase listProductInventoryMovementsUseCase;
     private final InventoryMovementHttpMapper mapper;
 
     @PostMapping(ApiPaths.INVENTORY_ENTRIES)
@@ -109,6 +112,32 @@ public class InventoryController {
             @ParameterObject @ModelAttribute PaginationRequest request
     ) {
         PageResult<InventoryMovement> result = listInventoryMovementsUseCase.list(
+                mapper.toPaginationCriteria(request)
+        );
+        return ResponseEntity.ok(mapper.toPageResponse(result));
+    }
+
+    @GetMapping(ApiPaths.PRODUCT_INVENTORY_MOVEMENTS)
+    @Operation(summary = "List inventory movements by product")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Product movements listed"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid product id or pagination",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Product not found",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<PageResponse<InventoryMovementResponse>> listProductMovements(
+            @PathVariable Long productId,
+            @ParameterObject @ModelAttribute PaginationRequest request
+    ) {
+        PageResult<InventoryMovement> result = listProductInventoryMovementsUseCase.list(
+                productId,
                 mapper.toPaginationCriteria(request)
         );
         return ResponseEntity.ok(mapper.toPageResponse(result));

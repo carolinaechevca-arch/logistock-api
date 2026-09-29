@@ -99,7 +99,10 @@ class InventoryControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/v1/inventory/entries'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/inventory/exits'].post").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/inventory/movements'].get").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/inventory/movements'].get").exists())
+                .andExpect(jsonPath(
+                        "$.paths['/api/v1/inventory/movements/product/{productId}'].get"
+                ).exists());
     }
 
     @Test
@@ -211,20 +214,76 @@ class InventoryControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value("INVALID_PAGINATION"));
     }
 
+    @Test
+    void listsOnlyMovementsForRequestedProduct() throws Exception {
+        Long firstProductId = createProduct("Barcode scanner");
+        Long secondProductId = createProduct("Warehouse tablet");
+        registerEntry(firstProductId, 8);
+        registerEntry(secondProductId, 3);
+        registerExit(firstProductId, 5);
+
+        mockMvc.perform(get(
+                        "/api/v1/inventory/movements/product/{productId}",
+                        firstProductId
+                ))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].type").value("EXIT"))
+                .andExpect(jsonPath("$.content[0].productId").value(firstProductId))
+                .andExpect(jsonPath("$.content[1].type").value("ENTRY"))
+                .andExpect(jsonPath("$.content[1].productId").value(firstProductId))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void returnsEmptyPageForProductWithoutMovements() throws Exception {
+        Long productId = createProduct("Product without movements");
+
+        mockMvc.perform(get(
+                        "/api/v1/inventory/movements/product/{productId}",
+                        productId
+                ))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(0))
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.last").value(true));
+    }
+
+    @Test
+    void returnsNotFoundWhenListingMovementsForMissingProduct() throws Exception {
+        mockMvc.perform(get("/api/v1/inventory/movements/product/{productId}", 999999))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"));
+    }
+
+    @Test
+    void rejectsInvalidProductIdWhenListingMovements() throws Exception {
+        mockMvc.perform(get("/api/v1/inventory/movements/product/{productId}", 0))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PRODUCT_ID"));
+    }
+
     private Long createProduct() throws Exception {
+        return createProduct("Barcode scanner");
+    }
+
+    private Long createProduct(String name) throws Exception {
         mockMvc.perform(post("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "name": "Barcode scanner",
+                                  "name": "%s",
                                   "description": "Warehouse device",
                                   "category": "ELECTRONICS",
                                   "stock": 12,
                                   "price": 245.90
                                 }
-                                """))
+                                """.formatted(name)))
                 .andExpect(status().isCreated());
-        return productRepository.findAll().getFirst().getId();
+        return productRepository.findAll().stream()
+                .map(product -> product.getId())
+                .max(Long::compareTo)
+                .orElseThrow();
     }
 
     private void registerEntry(Long productId, int quantity) throws Exception {
