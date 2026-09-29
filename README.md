@@ -18,8 +18,9 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 | `GET` | `/api/v1/inventory/movements` | Implementado | Lista todos los movimientos de inventario |
 | `GET` | `/api/v1/inventory/movements/product/{productId}` | Implementado | Lista los movimientos de un producto |
 | `POST` | `/api/v1/orders` | Implementado | Crea un pedido en estado `CREATED` |
+| `GET` | `/api/v1/orders/{id}` | Implementado | Consulta un pedido con todos sus ítems |
 
-La consulta, confirmación y cancelación de pedidos se implementarán en features posteriores.
+El listado, la confirmación y la cancelación de pedidos se implementarán en features posteriores.
 
 ## Tecnologías
 
@@ -821,6 +822,38 @@ Reglas:
 
 Una petición inválida devuelve `400 Bad Request`. Un producto inexistente devuelve `404 Not Found` con `PRODUCT_NOT_FOUND`. Una cantidad superior al stock devuelve `409 Conflict` con `INSUFFICIENT_STOCK`.
 
+## Consultar un pedido por ID
+
+```http
+GET /api/v1/orders/{id}
+```
+
+Ejemplo con cURL:
+
+```bash
+curl --request GET \
+  --url http://localhost:8080/api/v1/orders/1
+```
+
+Respuesta `200 OK`:
+
+```json
+{
+  "id": 1,
+  "createdAt": "2026-09-28T22:00:00Z",
+  "status": "CREATED",
+  "items": [
+    {
+      "id": 1,
+      "productId": 1,
+      "quantity": 3
+    }
+  ]
+}
+```
+
+El pedido se devuelve con todos sus ítems. Un identificador igual o menor que cero produce `400 Bad Request` con `INVALID_ORDER_ID`. Si el pedido no existe, la respuesta es `404 Not Found` con `ORDER_NOT_FOUND`.
+
 ## Swagger y OpenAPI
 
 Con la aplicación en ejecución:
@@ -883,6 +916,10 @@ Las pruebas actuales cubren:
 - Rechazo de productos inexistentes o con stock insuficiente.
 - Conservación del stock durante la creación del pedido.
 - Publicación de la creación de pedidos en OpenAPI.
+- Consulta de un pedido con todos sus ítems.
+- Respuesta `404` para pedidos inexistentes.
+- Rechazo de identificadores de pedido inválidos.
+- Publicación de la consulta de pedidos en OpenAPI.
 - Inicio del contexto de Spring.
 
 Durante las pruebas se utiliza una base H2 en memoria con compatibilidad PostgreSQL, base lógica `logistock` y esquema `inventory`.
@@ -894,5 +931,5 @@ Cada endpoint se desarrolla en una rama `feature/*` independiente. Antes de real
 La feature actual se encuentra en:
 
 ```text
-feature/create-order
+feature/get-order
 ```

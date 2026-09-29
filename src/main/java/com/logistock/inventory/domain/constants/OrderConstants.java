@@ -6,6 +6,8 @@ public final class OrderConstants {
     public static final int MINIMUM_ITEM_QUANTITY = 1;
 
     public static final String INVALID_ORDER = "INVALID_ORDER";
+    public static final String INVALID_ORDER_ID = "INVALID_ORDER_ID";
+    public static final String ORDER_NOT_FOUND = "ORDER_NOT_FOUND";
     public static final String EMPTY_ORDER_MESSAGE = "An order must contain at least one item";
     public static final String INVALID_ITEM_QUANTITY_MESSAGE =
             "Order item quantity must be greater than zero";
@@ -16,6 +18,8 @@ public final class OrderConstants {
             "A valid product id is required for every order item";
     public static final String CREATION_DATE_REQUIRED_MESSAGE = "Order creation date is required";
     public static final String STATUS_REQUIRED_MESSAGE = "Order status is required";
+    public static final String INVALID_ORDER_ID_MESSAGE = "Order id must be greater than zero";
+    public static final String ORDER_NOT_FOUND_MESSAGE = "Order not found with id %d";
 
     private OrderConstants() {
     }

@@ -3,6 +3,7 @@ package com.logistock.inventory.infra.adapters.driving.http.controller;
 import com.logistock.inventory.configuration.exceptionhandler.ApiErrorResponse;
 import com.logistock.inventory.domain.model.Order;
 import com.logistock.inventory.domain.port.in.CreateOrderUseCase;
+import com.logistock.inventory.domain.port.in.GetOrderUseCase;
 import com.logistock.inventory.infra.adapters.driving.http.constants.ApiPaths;
 import com.logistock.inventory.infra.adapters.driving.http.dto.request.CreateOrderRequest;
 import com.logistock.inventory.infra.adapters.driving.http.dto.response.OrderResponse;
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
     private final CreateOrderUseCase createOrderUseCase;
+    private final GetOrderUseCase getOrderUseCase;
     private final OrderHttpMapper mapper;
 
     @PostMapping
@@ -54,5 +58,24 @@ public class OrderController {
     public ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request) {
         Order order = createOrderUseCase.create(mapper.toCommand(request));
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(order));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get an order by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order found"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid order id",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Order not found",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<OrderResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(mapper.toResponse(getOrderUseCase.getById(id)));
     }
 }

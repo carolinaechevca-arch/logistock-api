@@ -4,12 +4,14 @@ import com.logistock.inventory.domain.constants.InventoryConstants;
 import com.logistock.inventory.domain.exception.InvalidProductException;
 import com.logistock.inventory.domain.exception.InvalidInventoryMovementException;
 import com.logistock.inventory.domain.exception.InvalidOrderException;
+import com.logistock.inventory.domain.exception.InvalidOrderIdException;
 import com.logistock.inventory.domain.exception.InvalidProductIdException;
 import com.logistock.inventory.domain.exception.InvalidPaginationException;
 import com.logistock.inventory.domain.exception.InvalidStockRangeException;
 import com.logistock.inventory.domain.exception.InsufficientStockException;
 import com.logistock.inventory.domain.exception.ProductNotFoundException;
 import com.logistock.inventory.domain.exception.ProductHasStockException;
+import com.logistock.inventory.domain.exception.OrderNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -65,6 +67,34 @@ public class GlobalExceptionHandler {
     ) {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(InvalidOrderIdException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidOrderId(
+            InvalidOrderIdException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getCode(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleOrderNotFound(
+            OrderNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
                 exception.getCode(),
                 exception.getMessage(),
                 request.getRequestURI(),

@@ -11,6 +11,7 @@ import com.logistock.inventory.domain.port.out.OrderRepositoryPort;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class OrderRepositoryAdapter implements OrderRepositoryPort {
@@ -29,5 +30,10 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
                 .toList();
         OrderEntity savedOrder = orderRepository.save(mapper.toEntity(order, items));
         return mapper.toDomain(savedOrder);
+    }
+
+    @Override
+    public Optional<Order> findById(Long id) {
+        return orderRepository.findById(id).map(mapper::toDomain);
     }
 }

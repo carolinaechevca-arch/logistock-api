@@ -146,7 +146,39 @@ class OrderControllerIntegrationTest {
     void exposesOrderCreationInOpenApi() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paths['/api/v1/orders'].post").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/orders'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/orders/{id}'].get").exists());
+    }
+
+    @Test
+    void getsOrderByIdWithItsItems() throws Exception {
+        Long productId = createProduct("Barcode scanner", 12);
+        Long orderId = createOrder(productId, 3);
+
+        mockMvc.perform(get("/api/v1/orders/{id}", orderId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(orderId))
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].id").isNumber())
+                .andExpect(jsonPath("$.items[0].productId").value(productId))
+                .andExpect(jsonPath("$.items[0].quantity").value(3));
+    }
+
+    @Test
+    void returnsNotFoundForMissingOrder() throws Exception {
+        mockMvc.perform(get("/api/v1/orders/{id}", 999999))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("Order not found with id 999999"));
+    }
+
+    @Test
+    void rejectsInvalidOrderId() throws Exception {
+        mockMvc.perform(get("/api/v1/orders/{id}", 0))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_ORDER_ID"));
     }
 
     private Long createProduct(String name, int stock) throws Exception {
@@ -164,6 +196,23 @@ class OrderControllerIntegrationTest {
                 .andExpect(status().isCreated());
         return productRepository.findAll().stream()
                 .map(product -> product.getId())
+                .max(Long::compareTo)
+                .orElseThrow();
+    }
+
+    private Long createOrder(Long productId, int quantity) throws Exception {
+        mockMvc.perform(post("/api/v1/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "items": [
+                                    {"productId": %d, "quantity": %d}
+                                  ]
+                                }
+                                """.formatted(productId, quantity)))
+                .andExpect(status().isCreated());
+        return orderRepository.findAll().stream()
+                .map(OrderEntity::getId)
                 .max(Long::compareTo)
                 .orElseThrow();
     }
