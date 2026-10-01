@@ -261,6 +261,116 @@ gradlew.bat bootRun
 
 Por defecto, la API queda disponible en `http://localhost:8080`.
 
+## Docker
+
+La API se contenoriza con un `Dockerfile` multi-stage y se ejecuta junto con un contenedor de PostgreSQL conectados por una red de Docker. La imagen se etiqueta `practica2-api:v1`, nombre que también usan los manifiestos de Kubernetes.
+
+### Requisitos
+
+- Docker Desktop en ejecución
+- Puerto `8080` libre en la máquina local
+
+No se necesita JDK ni Gradle en la máquina: la compilación ocurre dentro del build de la imagen.
+
+### Puertos
+
+| Servicio | Puerto en el contenedor | Puerto publicado en el host |
+| --- | --- | --- |
+| API (Spring Boot) | `8080` | `8080` |
+| PostgreSQL | `5432` | No se publica; solo es accesible desde la red `practica2-net` |
+
+### Construir la imagen
+
+```bash
+docker build -t practica2-api:v1 .
+docker images practica2-api
+```
+
+![Imagen Docker generada](docs/evidencias/docker/docker-01-imagen.png)
+
+### Ejecutar los contenedores
+
+Crear la red y levantar PostgreSQL. `POSTGRES_DB=logistock` crea la base de datos que la API necesita; el usuario y la contraseña coinciden con los valores por defecto de `application.yaml`.
+
+```bash
+docker network create practica2-net
+
+docker run -d --name practica2-db --network practica2-net \
+  -e POSTGRES_DB=logistock \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  postgres:16
+
+docker exec practica2-db pg_isready -U postgres -d logistock
+```
+
+Cuando `pg_isready` responde `accepting connections`, levantar la API. `DB_HOST` apunta al nombre del contenedor de PostgreSQL, porque dentro del contenedor `localhost` sería la propia API.
+
+```bash
+docker run -d --name practica2-api --network practica2-net \
+  -p 8080:8080 \
+  -e DB_HOST=practica2-db \
+  practica2-api:v1
+```
+
+![Comandos de red, PostgreSQL y API](docs/evidencias/docker/docker-02-comandos-run.png)
+
+### Validar la ejecución
+
+```bash
+docker ps
+docker logs practica2-api
+```
+
+En los logs debe aparecer `Started InventoryApplication` y `Tomcat started on port 8080`. En `docker ps` la API debe mostrar `0.0.0.0:8080->8080/tcp`.
+
+![docker ps y docker logs](docs/evidencias/docker/docker-03-ps-logs.png)
+
+![Contenedores en Docker Desktop](docs/evidencias/docker/docker-07-docker-desktop.png)
+
+### Probar la API
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Especificación OpenAPI: `http://localhost:8080/v3/api-docs`
+- Prueba rápida por terminal:
+
+```bash
+curl -i http://localhost:8080/api/v1/products
+```
+
+Debe responder `200 OK` con una página vacía la primera vez.
+
+![Swagger UI](docs/evidencias/docker/docker-04-swagger-ui.png)
+
+Desde Swagger UI se creó un producto con `POST /api/v1/products` (respuesta `201`) y luego se consultó con `GET /api/v1/products` (respuesta `200`), lo que confirma que la API escribe y lee de PostgreSQL dentro de Docker.
+
+![POST /api/v1/products con respuesta 201](docs/evidencias/docker/docker-05-post-201.png)
+
+![GET /api/v1/products con respuesta 200](docs/evidencias/docker/docker-06-get-200.png)
+
+### Detener y limpiar
+
+```bash
+docker rm -f practica2-api practica2-db
+docker network rm practica2-net
+```
+
+PostgreSQL no usa volumen, por lo que los datos se pierden al eliminar el contenedor `practica2-db`.
+
+### Variables de entorno de la API
+
+Son las mismas de la sección [PostgreSQL](#postgresql). En Docker solo es necesario definir `DB_HOST`; el resto usa los valores por defecto (`DB_PORT=5432`, `DB_NAME=logistock`, `DB_USERNAME=postgres`, `DB_PASSWORD=postgres`).
+
+### Decisiones del Dockerfile
+
+- **Multi-stage:** la primera etapa (`eclipse-temurin:21-jdk`) compila con Gradle Wrapper; la segunda (`eclipse-temurin:21-jre-alpine`) solo contiene el JRE y el jar. El JDK, Gradle y el código fuente no llegan a la imagen final.
+- **Caché de capas:** primero se copian los archivos de Gradle y se descargan las dependencias, y después se copia `src`. Cambiar código no vuelve a descargar librerías.
+- **`bootJar`:** genera un único jar ejecutable, lo que hace seguro el `COPY ... *.jar` (la tarea `assemble` también generaría un `-plain.jar`).
+- **Usuario sin privilegios:** el proceso corre como el usuario `spring`, no como root.
+- **`-XX:MaxRAMPercentage=75.0`:** hace que la JVM calcule el heap a partir del límite de memoria del contenedor.
+- **`EXPOSE 8080`:** solo documenta el puerto; la publicación real se hace con `-p` en `docker run`.
+- **`.dockerignore`:** excluye `.git`, `build/`, `.gradle` y archivos de IDE para mantener pequeño el contexto de build.
+
 ## Crear un producto
 
 ### Request
