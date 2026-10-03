@@ -1,0 +1,67 @@
+# Base de datos PostgreSQL 16: Deployment + Service interno (ClusterIP)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: practica2
+  labels:
+    app: postgres
+    app.kubernetes.io/part-of: logistock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres          # debe coincidir con template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          envFrom:
+            - secretRef:
+                name: postgres-secret   # crea POSTGRES_DB, POSTGRES_USER y POSTGRES_PASSWORD
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          emptyDir: {}      # almacenamiento temporal: los datos se pierden si el pod se recrea
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: practica2
+  labels:
+    app: postgres
+    app.kubernetes.io/part-of: logistock
+spec:
+  type: ClusterIP           # solo accesible dentro del clúster
+  selector:
+    app: postgres           # envía el tráfico a los pods con label app=postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

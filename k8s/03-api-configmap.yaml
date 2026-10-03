@@ -1,0 +1,13 @@
+# Configuración no sensible de la API. DB_HOST es el nombre del Service de PostgreSQL.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: practica2
+  labels:
+    app: logistock-api
+    app.kubernetes.io/part-of: logistock
+data:
+  DB_HOST: postgres-service
+  DB_PORT: "5432"
+  DB_NAME: logistock

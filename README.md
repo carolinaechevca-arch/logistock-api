@@ -4,6 +4,15 @@ API REST para la gestión de inventario de una empresa de logística. El proyect
 
 El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos, registrar entradas y salidas de inventario, consultar la trazabilidad global o por producto y crear pedidos.
 
+## Integrantes y entregables
+
+| Integrante | Responsabilidad en la práctica |
+| --- | --- |
+| Sebastian Restrepo Mira |Dockers|
+| Mariana González |Api|
+| Ferney López Copete |Kubernetes|
+
+
 ## Estado actual
 
 | Método | Endpoint | Estado | Descripción |
@@ -370,6 +379,118 @@ Son las mismas de la sección [PostgreSQL](#postgresql). En Docker solo es neces
 - **`-XX:MaxRAMPercentage=75.0`:** hace que la JVM calcule el heap a partir del límite de memoria del contenedor.
 - **`EXPOSE 8080`:** solo documenta el puerto; la publicación real se hace con `-p` en `docker run`.
 - **`.dockerignore`:** excluye `.git`, `build/`, `.gradle` y archivos de IDE para mantener pequeño el contexto de build.
+
+## Kubernetes
+
+La API se despliega en el clúster local de Docker Desktop junto con PostgreSQL, dentro del namespace `practica2`. Los manifiestos están en la carpeta [`k8s/`](k8s/) y usan la misma imagen `practica2-api:v1` construida en la sección [Docker](#docker).
+
+### Requisitos
+
+- Docker Desktop con Kubernetes habilitado (*Settings → Kubernetes → Enable Kubernetes*, clúster tipo kubeadm)
+- `kubectl` apuntando al contexto `docker-desktop`
+- Imagen `practica2-api:v1` construida localmente (`docker build -t practica2-api:v1 .`)
+- Puerto `30080` libre en la máquina local
+
+### Manifiestos
+
+| Archivo | Recursos | Descripción |
+| --- | --- | --- |
+| `k8s/00-namespace.yaml` | Namespace `practica2` | Aísla todos los recursos de la práctica |
+| `k8s/01-postgres-secret.yaml` | Secret `postgres-secret` | Nombre de la base de datos, usuario y contraseña |
+| `k8s/02-postgres.yaml` | Deployment `postgres` + Service ClusterIP `postgres-service` | PostgreSQL 16 accesible solo dentro del clúster |
+| `k8s/03-api-configmap.yaml` | ConfigMap `api-config` | `DB_HOST`, `DB_PORT` y `DB_NAME` de la API |
+| `k8s/04-api-deployment.yaml` | Deployment `logistock-api` | API con imagen `practica2-api:v1`, `imagePullPolicy: IfNotPresent`, requests/limits y probes |
+| `k8s/05-api-service.yaml` | Service NodePort `logistock-api-service` | Expone la API en el puerto `30080` del equipo |
+
+Todos los recursos comparten labels coherentes: los pods de la API llevan `app: logistock-api` y los de la base de datos `app: postgres`; los `selector` de cada Deployment y Service usan exactamente esos labels.
+
+### Puertos
+
+| Servicio | Tipo | Puerto del Service | Puerto del contenedor | Puerto en el equipo |
+| --- | --- | --- | --- | --- |
+| `logistock-api-service` | NodePort | `80` | `8080` | `30080` |
+| `postgres-service` | ClusterIP | `5432` | `5432` | No se publica |
+
+### Recursos asignados
+
+| Contenedor | CPU request | CPU limit | Memoria request | Memoria limit |
+| --- | --- | --- | --- | --- |
+| `logistock-api` | `250m` | `1` | `512Mi` | `1Gi` |
+| `postgres` | `100m` | `500m` | `256Mi` | `512Mi` |
+| `wait-for-postgres` (init) | `50m` | `100m` | `32Mi` | `64Mi` |
+
+Con `-XX:MaxRAMPercentage=75.0` (definido en el `Dockerfile`), la JVM limita su heap a cerca de 768 MB dentro del límite de `1Gi`.
+
+### Desplegar
+
+```bash
+kubectl config use-context docker-desktop
+docker pull postgres:16
+kubectl apply -f k8s/00-namespace.yaml
+kubectl apply -f k8s/
+kubectl get pods -n practica2 -w
+```
+
+El pod de la API pasa por `Init:0/1` mientras el `initContainer` espera a que PostgreSQL acepte conexiones, luego por `Running 0/1` mientras Spring Boot arranca, y queda en `Running 1/1` cuando `/v3/api-docs` responde.
+
+### Validar el despliegue
+
+```bash
+kubectl get pods -n practica2
+kubectl get svc -n practica2
+kubectl describe deployment logistock-api -n practica2
+kubectl logs deployment/logistock-api -n practica2
+```
+
+![kubectl apply](docs/evidencias/kubernetes/kubernetes-01-manifest.png)
+
+![kubectl get pods](docs/evidencias/kubernetes/k8s-02-get-pods.png)
+
+![kubectl get svc](docs/evidencias/kubernetes/k8s-03-get-services.png)
+
+![kubectl describe deployment](docs/evidencias/kubernetes/k8s-04-describe.png)
+
+![kubectl logs](docs/evidencias/kubernetes/k8s-05-logs.png)
+
+### Probar la API
+
+- Swagger UI: `http://localhost:30080/swagger-ui.html`
+- Especificación OpenAPI: `http://localhost:30080/v3/api-docs`
+
+```bash
+curl -i http://localhost:30080/api/v1/products
+```
+
+Si el NodePort no responde en el equipo, se puede usar port-forward y entrar por `http://localhost:8082`:
+
+```bash
+kubectl port-forward -n practica2 svc/logistock-api-service 8082:80
+```
+
+![Swagger UI en Kubernetes](docs/evidencias/kubernetes/running-kubernetes.png)
+
+![POST GET /api/v1/products con respuesta 201](docs/evidencias/kubernetes/test_api_post_get.png)
+
+![Manifiestos YAML](docs/evidencias/kubernetes/images_and_files_yaml.png)
+
+### Eliminar el despliegue
+
+```bash
+kubectl delete namespace practica2
+```
+
+PostgreSQL usa un volumen `emptyDir`, por lo que los datos se pierden cuando el pod se elimina o se recrea.
+
+### Decisiones de los manifiestos
+
+- **Namespace `practica2`:** agrupa y aísla los recursos; borrarlo limpia todo el despliegue.
+- **Secret + ConfigMap:** separan las credenciales de la configuración no sensible y evitan escribirlas en el Deployment.
+- **`imagePullPolicy: IfNotPresent`:** la imagen `practica2-api:v1` existe solo en el Docker local; con esta política Kubernetes la usa sin intentar descargarla de un registro.
+- **`initContainer` `wait-for-postgres`:** evita que la API falle al arrancar antes de que la base de datos esté lista.
+- **Readiness y liveness probes:** el Service solo envía tráfico al pod cuando la API responde, y Kubernetes la reinicia si deja de aceptar conexiones.
+- **ClusterIP para PostgreSQL y NodePort para la API:** la base de datos no queda expuesta fuera del clúster; solo la API es accesible desde el equipo.
+
+
 
 ## Crear un producto
 

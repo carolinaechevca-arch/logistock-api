@@ -1,0 +1,7 @@
+# Namespace exclusivo de la práctica: aísla todos los recursos de LogiStock
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: practica2
+  labels:
+    app.kubernetes.io/part-of: logistock
