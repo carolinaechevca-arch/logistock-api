@@ -1,0 +1,72 @@
+# API LogiStock (Spring Boot) usando la imagen local versionada practica2-api:v1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logistock-api
+  namespace: practica2
+  labels:
+    app: logistock-api
+    app.kubernetes.io/part-of: logistock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logistock-api    # debe coincidir con template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: logistock-api
+    spec:
+      initContainers:
+        # Espera a que PostgreSQL acepte conexiones antes de arrancar la API
+        - name: wait-for-postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "until pg_isready -h postgres-service -p 5432; do echo 'esperando PostgreSQL...'; sleep 2; done"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+      containers:
+        - name: logistock-api
+          image: practica2-api:v1
+          imagePullPolicy: IfNotPresent   # usa la imagen local; no la busca en Docker Hub
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: api-config          # DB_HOST, DB_PORT, DB_NAME
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /v3/api-docs
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
