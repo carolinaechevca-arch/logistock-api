@@ -18,7 +18,7 @@ spec:
         app: logistock-api
     spec:
       initContainers:
-        # Espera a que PostgreSQL acepte conexiones antes de arrancar la API
+        # Esperamos a que PostgreSQL acepte conexiones antes de arrancar la API
         - name: wait-for-postgres
           image: postgres:16
           imagePullPolicy: IfNotPresent

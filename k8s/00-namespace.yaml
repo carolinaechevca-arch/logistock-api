@@ -1,4 +1,3 @@
-# Namespace exclusivo de la práctica: aísla todos los recursos de LogiStock
 apiVersion: v1
 kind: Namespace
 metadata:
