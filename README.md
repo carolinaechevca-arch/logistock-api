@@ -518,7 +518,7 @@ Las colecciones usan variables para construir las rutas (`base_url`, `products`,
 
 ### Pruebas en Docker
 
-#### Products
+#### PRODUCTS
 **Create product 2**
 ![Create product 2](docs/evidencias/postman/docker/create-product-2.png)
 
@@ -540,7 +540,7 @@ Las colecciones usan variables para construir las rutas (`base_url`, `products`,
 **Delete product 2 (con verificación)**
 ![Delete product 2](docs/evidencias/postman/docker/delete-product-2.png)
 
-#### Inventory
+#### INVENTORY
 **Register entries**
 ![Register entries](docs/evidencias/postman/docker/register-entries.png)
 
@@ -553,7 +553,7 @@ Las colecciones usan variables para construir las rutas (`base_url`, `products`,
 **List mov product**
 ![List mov product](docs/evidencias/postman/docker/list-mov-product.png)
 
-#### Orders
+#### ORDERS
 **Create order**
 ![Create order](docs/evidencias/postman/docker/create-order.png)
 
@@ -567,7 +567,7 @@ Las colecciones usan variables para construir las rutas (`base_url`, `products`,
 
 Se accedió por `kubectl port-forward` en el puerto `8082`, porque el NodePort `30080` no respondió en `localhost`.
 
-#### Products
+#### PRODUCTS
 **Create product 1**
 ![Create product 1](docs/evidencias/postman/kubernetes/create-product-1.png)
 
@@ -592,7 +592,7 @@ Se accedió por `kubectl port-forward` en el puerto `8082`, porque el NodePort `
 **Delete product 2 (con verificación)**
 ![Delete product 2](docs/evidencias/postman/kubernetes/delete-product-2.png)
 
-#### Inventory
+#### INVENTORY
 **Register entries**
 ![Register entries](docs/evidencias/postman/kubernetes/register-entries.png)
 
@@ -605,7 +605,7 @@ Se accedió por `kubectl port-forward` en el puerto `8082`, porque el NodePort `
 **List mov product**
 ![List mov product](docs/evidencias/postman/kubernetes/list-mov-product.png)
 
-#### Orders
+#### ORDERS
 **Create order**
 ![Create order](docs/evidencias/postman/kubernetes/create-order.png)
 
@@ -622,13 +622,15 @@ Se accedió por `kubectl port-forward` en el puerto `8082`, porque el NodePort `
 ![kubectl apply (2)](docs/evidencias/validacion/kubectl-apply-2.png)
 
 **kubectl get pods -n practica2**
+
 ![kubectl get pods](docs/evidencias/validacion/kubectl-get-pods.png)
 
 **kubectl get svc -n practica2**
+
 ![kubectl get svc](docs/evidencias/validacion/kubectl-get-svc.png)
 
 **Port-forward activo**
-![port-forward](docs/evidencias/validacion/Port-forward.png)
+![port-forward](docs/evidencias/validacion/Port-forwart.png)
 
 **Swagger UI en Kubernetes (localhost:8082)**
 ![Swagger Kubernetes](docs/evidencias/validacion/Swagger-kubernetes-8082.png)
