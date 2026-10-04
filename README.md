@@ -11,7 +11,10 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 | Sebastian Restrepo Mira |Dockers|
 | Mariana González |Api|
 | Ferney López Copete |Kubernetes|
+| Juan Camilo Duarte Vasco | Validación y evidencias |
+| <<Nombre completo>> | Documentación y coordinación |
 
+**Video de implementación:** <<enlace de YouTube>>
 
 ## Estado actual
 
@@ -489,6 +492,146 @@ PostgreSQL usa un volumen `emptyDir`, por lo que los datos se pierden cuando el 
 - **`initContainer` `wait-for-postgres`:** evita que la API falle al arrancar antes de que la base de datos esté lista.
 - **Readiness y liveness probes:** el Service solo envía tráfico al pod cuando la API responde, y Kubernetes la reinicia si deja de aceptar conexiones.
 - **ClusterIP para PostgreSQL y NodePort para la API:** la base de datos no queda expuesta fuera del clúster; solo la API es accesible desde el equipo.
+
+
+
+## Validación con Postman
+
+Las pruebas se hicieron con dos colecciones de Postman, una por entorno. Cada una usa un environment con la variable `base_url`.
+
+| Entorno | Colección | `base_url` |
+| --- | --- | --- |
+| Docker | [Despliegue Docker](docs/postman/docker/Despliegue_Docker.postman_collection.json) | `http://localhost:8080` |
+| Kubernetes | [Despliegue Kubernetes](docs/postman/kubernetes/Despliegue_Kubernetes.postman_collection.json) | `http://localhost:8082` (port-forward) |
+
+Orden de ejecución: crear productos, registrar entradas y salidas, crear pedido, consultas y, al final, eliminar.
+
+### Variables de Postman
+
+Las colecciones usan variables para construir las rutas (`base_url`, `products`, `inventory`, `orders`). Estas son las variables definidas en cada entorno:
+
+**Docker**
+![Variables de Postman en Docker](docs/postman/docker/Variables.png)
+
+**Kubernetes**
+![Variables de Postman en Kubernetes](docs/postman/kubernetes/Variables.jpeg)
+
+### Pruebas en Docker
+
+#### Products
+**Create product 2**
+![Create product 2](docs/postman/docker/create-product-2.png)
+
+**Create product 3**
+![Create product 3](docs/postman/docker/create-product-3.png)
+
+**List products**
+![List products](docs/postman/docker/list-products.png)
+
+**Get product by id**
+![Get product by id](docs/postman/docker/get-product-by-id.png)
+
+**List restock**
+![List restock](docs/postman/docker/list-restock.png)
+
+**Delete product 1**
+![Delete product 1](docs/postman/docker/delete-product-1.jpeg)
+
+**Delete product 2 (con verificación)**
+![Delete product 2](docs/postman/docker/delete-product-2.png)
+
+#### Inventory
+**Register entries**
+![Register entries](docs/postman/docker/register-entries.png)
+
+**Register exits**
+![Register exits](docs/postman/docker/register-exits.png)
+
+**List movements**
+![List movements](docs/postman/docker/list-movements.jpeg)
+
+**List mov product**
+![List mov product](docs/postman/docker/list-mov-product.png)
+
+#### Orders
+**Create order**
+![Create order](docs/postman/docker/create-order.png)
+
+**List orders**
+![List orders](docs/postman/docker/list-orders.png)
+
+**Get orders by id**
+![Get orders by id](docs/postman/docker/get-orders-by-id.jpeg)
+
+### Pruebas en Kubernetes
+
+Se accedió por `kubectl port-forward` en el puerto `8082`, porque el NodePort `30080` no respondió en `localhost`.
+
+#### Products
+**Create product 1**
+![Create product 1](docs/postman/kubernetes/create-product-1.png)
+
+**Create product 2**
+![Create product 2](docs/postman/kubernetes/create-product-2.png)
+
+**Create product 3**
+![Create product 3](docs/postman/kubernetes/create-product-3.png)
+
+**List products**
+![List products](docs/postman/kubernetes/list-products.png)
+
+**Get product by id**
+![Get product by id](docs/postman/kubernetes/get-product-by-id.png)
+
+**List restock**
+![List restock](docs/postman/kubernetes/list-restock.png)
+
+**Delete product 1**
+![Delete product 1](docs/postman/kubernetes/delete-product-1.jpeg)
+
+**Delete product 2 (con verificación)**
+![Delete product 2](docs/postman/kubernetes/delete-product-2.png)
+
+#### Inventory
+**Register entries**
+![Register entries](docs/postman/kubernetes/register-entries.png)
+
+**Register exits**
+![Register exits](docs/postman/kubernetes/register-exits.jpeg)
+
+**List movements**
+![List movements](docs/postman/kubernetes/list-movements.png)
+
+**List mov product**
+![List mov product](docs/postman/kubernetes/list-mov-product.png)
+
+#### Orders
+**Create order**
+![Create order](docs/postman/kubernetes/create-order.png)
+
+**List orders**
+![List orders](docs/postman/kubernetes/list-orders.png)
+
+**Get orders by id**
+![Get orders by id](docs/postman/kubernetes/get-orders-by-id.png)
+
+### Evidencias de kubectl y acceso
+
+**Despliegue de los manifiestos**
+![kubectl apply (1)](docs/evidencias/validacion/kubectl-apply-1.png)
+![kubectl apply (2)](docs/evidencias/validacion/kubectl-apply-2.png)
+
+**kubectl get pods -n practica2**
+![kubectl get pods](docs/evidencias/validacion/kubectl-get-pods.png)
+
+**kubectl get svc -n practica2**
+![kubectl get svc](docs/evidencias/validacion/kubectl-get-svc.png)
+
+**Port-forward activo**
+![port-forward](docs/evidencias/validacion/port-forward.png)
+
+**Swagger UI en Kubernetes (localhost:8082)**
+![Swagger Kubernetes](docs/evidencias/validacion/swagger-kubernetes-8082.png)
 
 
 
@@ -1220,3 +1363,17 @@ La feature actual se encuentra en:
 ```text
 feature/list-orders
 ```
+
+## Checklist de entrega
+
+- [x] La API funciona dentro de Docker.
+- [x] La imagen tiene una etiqueta de versión (`v1`).
+- [x] Kubernetes tiene pods en estado Running.
+- [x] El Service permite acceder a la API.
+- [x] Namespace `practica2` configurado.
+- [x] Requests y limits definidos.
+- [ ] Repositorio compartido con `oalarconpe`.
+- [ ] README completo (integrantes y video).
+- [ ] Video publicado en YouTube y enlazado.
+- [x] Evidencias visuales incluidas.
+- [ ] Reflexión técnica (máximo una página).
