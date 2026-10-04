@@ -501,8 +501,8 @@ Las pruebas se hicieron con dos colecciones de Postman, una por entorno. Cada un
 
 | Entorno | Colección | `base_url` |
 | --- | --- | --- |
-| Docker | [Despliegue Docker](docs/postman/docker/Despliegue_Docker.postman_collection.json) | `http://localhost:8080` |
-| Kubernetes | [Despliegue Kubernetes](docs/postman/kubernetes/Despliegue_Kubernetes.postman_collection.json) | `http://localhost:8082` (port-forward) |
+| Docker | [Despliegue Docker](docs/evidencias/postman/docker/Despliegue_Docker.postman_collection.json) | `http://localhost:8080` |
+| Kubernetes | [Despliegue Kubernetes](docs/evidencias/postman/kubernetes/Despliegue_Kubernetes.postman_collection.json) | `http://localhost:8082` (port-forward) |
 
 Orden de ejecución: crear productos, registrar entradas y salidas, crear pedido, consultas y, al final, eliminar.
 
@@ -511,57 +511,57 @@ Orden de ejecución: crear productos, registrar entradas y salidas, crear pedido
 Las colecciones usan variables para construir las rutas (`base_url`, `products`, `inventory`, `orders`). Estas son las variables definidas en cada entorno:
 
 **Docker**
-![Variables de Postman en Docker](docs/postman/docker/Variables.png)
+![Variables de Postman en Docker](docs/evidencias/postman/docker/Variables.png)
 
 **Kubernetes**
-![Variables de Postman en Kubernetes](docs/postman/kubernetes/Variables.jpeg)
+![Variables de Postman en Kubernetes](docs/evidencias/postman/kubernetes/Variables.jpeg)
 
 ### Pruebas en Docker
 
 #### Products
 **Create product 2**
-![Create product 2](docs/postman/docker/create-product-2.png)
+![Create product 2](docs/evidencias/postman/docker/create-product-2.png)
 
 **Create product 3**
-![Create product 3](docs/postman/docker/create-product-3.png)
+![Create product 3](docs/evidencias/postman/docker/create-product-3.png)
 
 **List products**
-![List products](docs/postman/docker/list-products.png)
+![List products](docs/evidencias/postman/docker/list-products.png)
 
 **Get product by id**
-![Get product by id](docs/postman/docker/get-product-by-id.png)
+![Get product by id](docs/evidencias/postman/docker/get-product-by-id.png)
 
 **List restock**
-![List restock](docs/postman/docker/list-restock.png)
+![List restock](docs/evidencias/postman/docker/list-restock.png)
 
 **Delete product 1**
-![Delete product 1](docs/postman/docker/delete-product-1.jpeg)
+![Delete product 1](docs/evidencias/postman/docker/delete-product-1.jpeg)
 
 **Delete product 2 (con verificación)**
-![Delete product 2](docs/postman/docker/delete-product-2.png)
+![Delete product 2](docs/evidencias/postman/docker/delete-product-2.png)
 
 #### Inventory
 **Register entries**
-![Register entries](docs/postman/docker/register-entries.png)
+![Register entries](docs/evidencias/postman/docker/register-entries.png)
 
 **Register exits**
-![Register exits](docs/postman/docker/register-exits.png)
+![Register exits](docs/evidencias/postman/docker/register-exits.png)
 
 **List movements**
-![List movements](docs/postman/docker/list-movements.jpeg)
+![List movements](docs/evidencias/postman/docker/list-movements.jpeg)
 
 **List mov product**
-![List mov product](docs/postman/docker/list-mov-product.png)
+![List mov product](docs/evidencias/postman/docker/list-mov-product.png)
 
 #### Orders
 **Create order**
-![Create order](docs/postman/docker/create-order.png)
+![Create order](docs/evidencias/postman/docker/create-order.png)
 
 **List orders**
-![List orders](docs/postman/docker/list-orders.png)
+![List orders](docs/evidencias/postman/docker/list-orders.png)
 
 **Get orders by id**
-![Get orders by id](docs/postman/docker/get-orders-by-id.jpeg)
+![Get orders by id](docs/evidencias/postman/docker/get-orders-by-id.jpeg)
 
 ### Pruebas en Kubernetes
 
@@ -569,69 +569,51 @@ Se accedió por `kubectl port-forward` en el puerto `8082`, porque el NodePort `
 
 #### Products
 **Create product 1**
-![Create product 1](docs/postman/kubernetes/create-product-1.png)
+![Create product 1](docs/evidencias/postman/kubernetes/create-product-1.png)
 
 **Create product 2**
-![Create product 2](docs/postman/kubernetes/create-product-2.png)
+![Create product 2](docs/evidencias/postman/kubernetes/create-product-2.png)
 
 **Create product 3**
-![Create product 3](docs/postman/kubernetes/create-product-3.png)
+![Create product 3](docs/evidencias/postman/kubernetes/create-product-3.png)
 
 **List products**
-![List products](docs/postman/kubernetes/list-products.png)
+![List products](docs/evidencias/postman/kubernetes/list-products.png)
 
 **Get product by id**
-![Get product by id](docs/postman/kubernetes/get-product-by-id.png)
+![Get product by id](docs/evidencias/postman/kubernetes/get-product-by-id.png)
 
 **List restock**
-![List restock](docs/postman/kubernetes/list-restock.png)
+![List restock](docs/evidencias/postman/kubernetes/list-restock.png)
 
 **Delete product 1**
-![Delete product 1](docs/postman/kubernetes/delete-product-1.jpeg)
+![Delete product 1](docs/evidencias/postman/kubernetes/delete-product-1.jpeg)
 
 **Delete product 2 (con verificación)**
-![Delete product 2](docs/postman/kubernetes/delete-product-2.png)
+![Delete product 2](docs/evidencias/postman/kubernetes/delete-product-2.png)
 
 #### Inventory
 **Register entries**
-![Register entries](docs/postman/kubernetes/register-entries.png)
+![Register entries](docs/evidencias/postman/kubernetes/register-entries.png)
 
 **Register exits**
-![Register exits](docs/postman/kubernetes/register-exits.jpeg)
+![Register exits](docs/evidencias/postman/kubernetes/register-exits.jpeg)
 
 **List movements**
-![List movements](docs/postman/kubernetes/list-movements.png)
+![List movements](docs/evidencias/postman/kubernetes/list-movements.png)
 
 **List mov product**
-![List mov product](docs/postman/kubernetes/list-mov-product.png)
+![List mov product](docs/evidencias/postman/kubernetes/list-mov-product.png)
 
 #### Orders
 **Create order**
-![Create order](docs/postman/kubernetes/create-order.png)
+![Create order](docs/evidencias/postman/kubernetes/create-order.png)
 
 **List orders**
-![List orders](docs/postman/kubernetes/list-orders.png)
+![List orders](docs/evidencias/postman/kubernetes/list-orders.png)
 
 **Get orders by id**
-![Get orders by id](docs/postman/kubernetes/get-orders-by-id.png)
-
-### Evidencias de kubectl y acceso
-
-**Despliegue de los manifiestos**
-![kubectl apply (1)](docs/evidencias/validacion/kubectl-apply-1.png)
-![kubectl apply (2)](docs/evidencias/validacion/kubectl-apply-2.png)
-
-**kubectl get pods -n practica2**
-![kubectl get pods](docs/evidencias/validacion/kubectl-get-pods.png)
-
-**kubectl get svc -n practica2**
-![kubectl get svc](docs/evidencias/validacion/kubectl-get-svc.png)
-
-**Port-forward activo**
-![port-forward](docs/evidencias/validacion/port-forward.png)
-
-**Swagger UI en Kubernetes (localhost:8082)**
-![Swagger Kubernetes](docs/evidencias/validacion/swagger-kubernetes-8082.png)
+![Get orders by id](docs/evidencias/postman/kubernetes/get-orders-by-id.png)
 
 
 
