@@ -9,7 +9,7 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 | Integrante | Responsabilidad en la práctica |
 | --- | --- |
 | Sebastian Restrepo Mira |Docker|
-| Mariana González |Api|
+| Diana Carolina Echeverri Cadavid |Api|
 | Ferney López Copete |Kubernetes|
 | Juan Camilo Duarte Vasco | Validación y evidencias |
 | Leidy Melissa Trejos Pamplona | Documentación y coordinación |
@@ -1383,8 +1383,8 @@ Las decisiones tecnológicas influyeron directamente en la configuración del Do
 - [x] El Service permite acceder a la API.
 - [x] Namespace `practica2` configurado.
 - [x] Requests y limits definidos.
-- [ ] Repositorio compartido con `oalarconpe`.
-- [ ] README completo (integrantes y video).
-- [ ] Video publicado en YouTube y enlazado.
+- [x] Repositorio compartido con `oalarconpe`.
+- [x] README completo (integrantes y video).
+- [x] Video publicado en YouTube y enlazado.
 - [x] Evidencias visuales incluidas.
 - [x] Reflexión técnica (máximo una página).
