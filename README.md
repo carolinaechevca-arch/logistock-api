@@ -615,6 +615,24 @@ Se accedió por `kubectl port-forward` en el puerto `8082`, porque el NodePort `
 **Get orders by id**
 ![Get orders by id](docs/evidencias/postman/kubernetes/get-orders-by-id.png)
 
+### Evidencias de kubectl y acceso
+
+**Despliegue de los manifiestos**
+![kubectl apply (1)](docs/evidencias/validacion/kubectl-apply-1.png)
+![kubectl apply (2)](docs/evidencias/validacion/kubectl-apply-2.png)
+
+**kubectl get pods -n practica2**
+![kubectl get pods](docs/evidencias/validacion/kubectl-get-pods.png)
+
+**kubectl get svc -n practica2**
+![kubectl get svc](docs/evidencias/validacion/kubectl-get-svc.png)
+
+**Port-forward activo**
+![port-forward](docs/evidencias/validacion/Port-forward.png)
+
+**Swagger UI en Kubernetes (localhost:8082)**
+![Swagger Kubernetes](docs/evidencias/validacion/Swagger-kubernetes-8082.png)
+
 
 
 ## Crear un producto
