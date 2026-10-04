@@ -1,0 +1,298 @@
+{
+  "info": {
+    "_postman_id": "f3497003-b0d6-4787-8309-8b367112789f",
+    "name": "Despliegue Docker",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "42700639",
+    "_collection_link": "https://go.postman.co/collection/42700639-f3497003-b0d6-4787-8309-8b367112789f?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Inventory",
+      "item": [
+        {
+          "name": "List movements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{inventory}}/movements",
+              "host": [
+                "{{base_url}}{{inventory}}"
+              ],
+              "path": [
+                "movements"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List mov product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{inventory}}/movements/product/1",
+              "host": [
+                "{{base_url}}{{inventory}}"
+              ],
+              "path": [
+                "movements",
+                "product",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register exits",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": 5, \r\n    \"observation\": \"Customer shipment\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}{{inventory}}/exits",
+              "host": [
+                "{{base_url}}{{inventory}}"
+              ],
+              "path": [
+                "exits"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register entries",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": 20,\r\n    \"observation\": \"Supplier delivery\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}{{inventory}}/entries",
+              "host": [
+                "{{base_url}}{{inventory}}"
+              ],
+              "path": [
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Get orders by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{orders}}/1",
+              "host": [
+                "{{base_url}}{{orders}}"
+              ],
+              "path": [
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{orders}}",
+              "host": [
+                "{{base_url}}{{orders}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"items\": [\r\n        {\"productId\": 1, \r\n            \"quantity\": 3}, \r\n        {\"productId\": 2, \r\n            \"quantity\": 2}\r\n    ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}{{orders}}",
+              "host": [
+                "{{base_url}}{{orders}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get product by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{products}}/1",
+              "host": [
+                "{{base_url}}{{products}}"
+              ],
+              "path": [
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{products}}/3",
+              "host": [
+                "{{base_url}}{{products}}"
+              ],
+              "path": [
+                "3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "\r\n\r\n{\r\n  \"name\": \"Safety helmet\",\r\n  \"description\": \"Industrial protective helmet\",\r\n  \"category\": \"CLOTHING\",\r\n  \"stock\": 0,\r\n  \"price\": 18.50\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}{{products}}",
+              "host": [
+                "{{base_url}}{{products}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{products}}",
+              "host": [
+                "{{base_url}}{{products}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List restock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}{{products}}/restock",
+              "host": [
+                "{{base_url}}{{products}}"
+              ],
+              "path": [
+                "restock"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5177/"
+    },
+    {
+      "key": "products",
+      "value": ""
+    },
+    {
+      "key": "inventory",
+      "value": ""
+    },
+    {
+      "key": "orders",
+      "value": ""
+    }
+  ]
+}
