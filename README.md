@@ -8,11 +8,11 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 
 | Integrante | Responsabilidad en la práctica |
 | --- | --- |
-| Sebastian Restrepo Mira |Dockers|
+| Sebastian Restrepo Mira |Docker|
 | Mariana González |Api|
 | Ferney López Copete |Kubernetes|
 | Juan Camilo Duarte Vasco | Validación y evidencias |
-| <<Nombre completo>> | Documentación y coordinación |
+| Leidy Melissa Trejos Pamplona | Documentación y coordinación |
 
 **Video de implementación:** <<enlace de YouTube>>
 
@@ -275,7 +275,7 @@ Por defecto, la API queda disponible en `http://localhost:8080`.
 
 ## Docker
 
-La API se contenoriza con un `Dockerfile` multi-stage y se ejecuta junto con un contenedor de PostgreSQL conectados por una red de Docker. La imagen se etiqueta `practica2-api:v1`, nombre que también usan los manifiestos de Kubernetes.
+La API se conteneriza con un `Dockerfile` multi-stage y se ejecuta junto con un contenedor de PostgreSQL conectados por una red de Docker. La imagen se etiqueta `practica2-api:v1`, nombre que también usan los manifiestos de Kubernetes.
 
 ### Requisitos
 
@@ -1366,6 +1366,15 @@ La feature actual se encuentra en:
 feature/list-orders
 ```
 
+## Reflexión técnica
+El proceso de despliegue se realizó de manera progresiva, primero iniciamos con la validación de la API REST, la cual fue desarrollada en Java 21 y Spring Boot, junto con PostgreSQL como sistema de gestión de base de datos. Luego, la aplicación fue contenerizada mediante Docker, generando la imagen practica2-api:v1, y finalmente se desplegó en un entorno local de Kubernetes. Para este despliegue se creó el namespace practica2 y se utilizaron manifiestos independientes para la API, PostgreSQL, los servicios, la configuración y las credenciales.
+
+Durante el proceso se presentaron algunos inconvenientes. Uno de los principales ocurrió al intentar acceder a la API desde Kubernetes mediante el NodePort 30080, ya que este no respondió correctamente desde localhost en el entorno utilizado. Para solucionar esta situación se utilizó kubectl port-forward, exponiendo temporalmente el servicio en el puerto 8082, lo que permitió realizar las pruebas mediante Swagger y Postman. Adicionalmente, implementamos un initContainer para evitar que la API iniciara antes de que PostgreSQL estuviera disponible, reduciendo errores de conexión durante el arranque.
+
+Las responsabilidades del equipo se distribuyeron por áreas de trabajo. Una persona estuvo encargada de la API, otra de la contenerización con Docker, otra del despliegue en Kubernetes, otra de la validación y las evidencias, y finalmente una persona estuvo a cargo de la documentación y coordinación. Esta distribución permitió trabajar de manera paralela y posteriormente consolidar los resultados en un único repositorio.
+
+Las decisiones tecnológicas influyeron directamente en la configuración del Dockerfile y del despliegue. Debido al uso de Java 21 y Spring Boot, se utilizó un Dockerfile multi-stage, con una primera etapa encargada de compilar la aplicación y una segunda etapa más ligera destinada únicamente a ejecutar el archivo JAR. También se configuró la aplicación para ejecutarse con un usuario sin privilegios y se utilizó la opción -XX:MaxRAMPercentage=75.0 para adaptar el uso de memoria de la JVM a los límites del contenedor. En Kubernetes se utilizó imagePullPolicy: IfNotPresent para reutilizar la imagen construida localmente, además de requests y limits de CPU y memoria, ConfigMap, Secret, probes de disponibilidad y un servicio NodePort para exponer la API.
+
 ## Checklist de entrega
 
 - [x] La API funciona dentro de Docker.
@@ -1378,4 +1387,4 @@ feature/list-orders
 - [ ] README completo (integrantes y video).
 - [ ] Video publicado en YouTube y enlazado.
 - [x] Evidencias visuales incluidas.
-- [ ] Reflexión técnica (máximo una página).
+- [x] Reflexión técnica (máximo una página).
