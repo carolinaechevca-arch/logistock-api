@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.webServer>
+    <handlers>
+      <add name="httpPlatformHandler" path="*" verb="*"
+           modules="httpPlatformHandler" resourceType="Unspecified" />
+    </handlers>
+    <httpPlatform
+        processPath="C:\RUTA\A\JDK21\bin\java.exe"
+        arguments="-Dserver.port=%HTTP_PLATFORM_PORT% 
+XX:MaxRAMPercentage=50.0 -jar &quot;C:\inetpub\logistock\logistock
+api.jar&quot;"
+        startupTimeLimit="120"
+        startupRetryCount="3"
+        requestTimeout="00:04:00"
+        stdoutLogEnabled="true"
+        stdoutLogFile="C:\inetpub\logistock\logs\stdout">
+      <environmentVariables>
+        <environmentVariable name="SPRING_PROFILES_ACTIVE" value="iis" />
+        <environmentVariable name="DB_HOST" value="localhost" />
+        <environmentVariable name="DB_PORT" value="5432" />
+        <environmentVariable name="DB_NAME" value="logistock" />
+        <environmentVariable name="DB_USERNAME" value="postgres" />
+        <environmentVariable name="DB_PASSWORD" 
+value="CLAVE_POSTGRES" />
+      </environmentVariables>
+    </httpPlatform>
+    <defaultDocument enabled="true">
+      <files>
+        <clear />
+        <add value="index.html" />
+      </files>
+    </defaultDocument>
+  </system.webServer>
+</configuration>
