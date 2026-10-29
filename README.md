@@ -493,6 +493,129 @@ PostgreSQL usa un volumen `emptyDir`, por lo que los datos se pierden cuando el 
 - **Readiness y liveness probes:** el Service solo envía tráfico al pod cuando la API responde, y Kubernetes la reinicia si deja de aceptar conexiones.
 - **ClusterIP para PostgreSQL y NodePort para la API:** la base de datos no queda expuesta fuera del clúster; solo la API es accesible desde el equipo.
 
+## Despliegue en Azure App Service
+
+La API se publica en Azure App Service como una aplicación Java SE que ejecuta el jar de Spring Boot con su servidor embebido. La base de datos es un Azure Database for PostgreSQL – Flexible Server administrado en una suscripción distinta.
+
+- **URL pública:** https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net
+- **Fecha de publicación:** 29/10/2026
+
+### Recursos
+
+| Recurso | Nombre | Configuración |
+| --- | --- | --- |
+| Suscripción | Azure for Students | Cuenta de Sebastian Restrepo Mira |
+| Grupo de recursos | `rg-logistock` | Agrupa la Web App y su plan |
+| Plan de App Service | `plan-logistock` | Linux, Basic B1 (1 instancia, 1.75 GB de memoria) |
+| Aplicación web | `logistock-api-srm` | Publicación por código, Java 21 SE (Embedded Web Server) |
+| Región | Chile Central | Ver [Decisión de región](#decisión-de-región) |
+
+### Decisión de región
+
+La base de datos está en **Brazil South**, pero la suscripción de estudiante donde está la Web App tiene la política *Allowed resource deployment regions*, que solo permite `belgiumcentral`, `northcentralus`, `chilecentral`, `spaincentral` y `francecentral`. Al intentar crear la Web App en Brazil South, Azure rechazó el recurso por esa política.
+
+Se eligió **Chile Central** porque es la región permitida más cercana a Brazil South, lo que reduce la latencia entre la API y la base de datos. La conexión entre ambas se hace por el endpoint público de PostgreSQL con TLS.
+
+El grupo de recursos aparece con ubicación Brazil South porque esa ubicación solo indica dónde se guardan sus metadatos; los recursos que contiene están en Chile Central.
+
+### Configuración de producción
+
+| Opción | Valor | Motivo |
+| --- | --- | --- |
+| HTTPS solamente | Activado | Redirige todo el tráfico HTTP a HTTPS |
+| Versión mínima de TLS | 1.2 | Rechaza versiones de TLS inseguras |
+| Siempre activado | Activado | Evita que la app se descargue por inactividad y tarde en responder |
+| Comprobación de estado | `/health`, umbral de 10 minutos | Azure sondea la API periódicamente y marca la instancia como incorrecta si deja de responder |
+| Application Insights | Deshabilitado | No es necesario para la práctica y evita consumo de créditos |
+
+Con una sola instancia, la comprobación de estado sirve para monitorear la disponibilidad: Azure no saca la instancia del balanceador, pero la reemplaza si falla durante una hora. Con varias instancias, las que fallen dejarían de recibir tráfico.
+
+Arrancar la API en B1 tarda cerca de un minuto, por eso se dejó *Siempre activado*: sin esa opción, la primera petición después de un periodo de inactividad esperaría todo el arranque.
+
+### Variables de entorno
+
+Se configuran en *Configuración → Variables de entorno → Configuración de la aplicación*. App Service las entrega a la API como variables de entorno, las mismas que lee `application.yaml`, por lo que no fue necesario cambiar código para Azure.
+
+| Variable | Valor | Descripción |
+| --- | --- | --- |
+| `SPRING_PROFILES_ACTIVE` | `azure` | Perfil activo; `/health` lo devuelve en el campo `environment` |
+| `SERVER_PORT` | `80` | Puerto en el que App Service envía el tráfico al contenedor |
+| `DB_HOST` | `logistock-db.postgres.database.azure.com` | Servidor PostgreSQL Flexible Server (Brazil South) |
+| `DB_PORT` | `5432` | Puerto de PostgreSQL |
+| `DB_NAME` | `logistock` | Base de datos de la aplicación |
+| `DB_USERNAME` | _no se publica_ | Usuario administrador del servidor |
+| `DB_PASSWORD` | _no se publica_ | Se comparte por un canal privado y solo existe en App Service |
+
+App Service ya inicia Java con `-Dserver.port=80`; `SERVER_PORT` deja ese valor explícito en la configuración de la aplicación.
+
+Antes del despliegue se comprobó desde Cloud Shell que la base de datos acepta conexiones desde Azure:
+
+```bash
+psql "host=logistock-db.postgres.database.azure.com port=5432 dbname=logistock user=<usuario> sslmode=require"
+```
+
+La conexión se estableció con TLS 1.3, lo que confirma que el firewall del servidor permite el acceso desde servicios de Azure aunque la Web App esté en otra suscripción.
+
+### Desplegar
+
+1. Generar el jar ejecutable en el equipo local:
+
+```bash
+./gradlew bootJar
+```
+
+El archivo queda en `build/libs/inventory-0.0.1-SNAPSHOT.jar`.
+
+2. Abrir **Azure Cloud Shell** (Bash) desde el portal, subir el jar con *Administrar archivos → Cargar* y desplegarlo:
+
+```bash
+az webapp deploy -g rg-logistock -n logistock-api-srm --src-path inventory-0.0.1-SNAPSHOT.jar --type jar
+```
+
+Cloud Shell usa la sesión del portal, por lo que no fue necesario instalar Azure CLI ni habilitar la autenticación básica de publicación.
+
+El despliegue terminó con `Site started successfully` y estado `RuntimeSuccessful` (1 instancia correcta, 0 fallidas).
+
+3. Revisar el arranque en *Supervisión → Secuencia de registro*. El log confirma:
+
+| Línea del log | Qué demuestra |
+| --- | --- |
+| `The following 1 profile is active: "azure"` | Se aplicó `SPRING_PROFILES_ACTIVE` |
+| `Tomcat initialized with port 80 (http)` | La API escucha en el puerto que usa App Service |
+| `HikariPool-1 - Added connection` | Conexión exitosa a PostgreSQL |
+| `Database JDBC URL [jdbc:postgresql://logistock-db.postgres.database.azure.com:5432/logistock]` | La base de datos es la de Azure, no una local |
+| `Started InventoryApplication in 56.771 seconds` | La aplicación terminó de arrancar |
+
+### Validar el despliegue
+
+- Inicio: `https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/`
+- Health: `https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/health`
+- Swagger UI: `https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/swagger-ui.html`
+
+```bash
+curl -i https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/health
+```
+
+Respuesta esperada: `200 OK` con `"status":"UP"` y `"environment":"azure"`.
+
+### Evidencias de publicación
+
+![Resumen de creación de la Web App](evidencias/azure/01-azure-creacion-webapp.png)
+
+![Información general del App Service](evidencias/azure/02-azure-app-service-overview.png)
+
+![Grupo de recursos rg-logistock](evidencias/azure/03-azure-resource-group.png)
+
+![HTTPS solamente activado](evidencias/azure/04-azure-https-only.png)
+
+![Variables de entorno con valores ocultos](evidencias/azure/05-azure-variables-entorno.png)
+
+![Despliegue del jar desde Cloud Shell](evidencias/azure/06-azure-deploy-cloudshell.png)
+
+![Arranque de la API en la secuencia de registro](evidencias/azure/07-azure-log-stream.png)
+
+![Comprobación de estado con /health](evidencias/azure/08-azure-health-check.png)
+
 
 
 ## Validación con Postman
