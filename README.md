@@ -493,6 +493,80 @@ PostgreSQL usa un volumen `emptyDir`, por lo que los datos se pierden cuando el 
 - **Readiness y liveness probes:** el Service solo envía tráfico al pod cuando la API responde, y Kubernetes la reinicia si deja de aceptar conexiones.
 - **ClusterIP para PostgreSQL y NodePort para la API:** la base de datos no queda expuesta fuera del clúster; solo la API es accesible desde el equipo.
 
+## Despliegue en Azure App Service
+
+La API se publica en Azure App Service como una aplicación Java SE que ejecuta el jar de Spring Boot con su servidor embebido. La base de datos es un Azure Database for PostgreSQL – Flexible Server administrado en una suscripción distinta.
+
+- **URL pública:** https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net
+- **Fecha de publicación:** _pendiente_
+
+### Recursos
+
+| Recurso | Nombre | Configuración |
+| --- | --- | --- |
+| Suscripción | Azure for Students | Cuenta de Sebastian Restrepo Mira |
+| Grupo de recursos | `rg-logistock` | Agrupa la Web App y su plan |
+| Plan de App Service | `plan-logistock` | Linux, Basic B1 (1 instancia, 1.75 GB de memoria) |
+| Aplicación web | `logistock-api-srm` | Publicación por código, Java 21 SE (Embedded Web Server) |
+| Región | Chile Central | Ver [Decisión de región](#decisión-de-región) |
+
+### Decisión de región
+
+La base de datos está en **Brazil South**, pero la suscripción de estudiante donde está la Web App tiene la política *Allowed resource deployment regions*, que solo permite `belgiumcentral`, `northcentralus`, `chilecentral`, `spaincentral` y `francecentral`. Al intentar crear la Web App en Brazil South, Azure rechazó el recurso por esa política.
+
+Se eligió **Chile Central** porque es la región permitida más cercana a Brazil South, lo que reduce la latencia entre la API y la base de datos. La conexión entre ambas se hace por el endpoint público de PostgreSQL con TLS.
+
+El grupo de recursos aparece con ubicación Brazil South porque esa ubicación solo indica dónde se guardan sus metadatos; los recursos que contiene están en Chile Central.
+
+### Configuración de producción
+
+| Opción | Valor | Motivo |
+| --- | --- | --- |
+| HTTPS solamente | Activado | Redirige todo el tráfico HTTP a HTTPS |
+| Versión mínima de TLS | 1.2 | Rechaza versiones de TLS inseguras |
+| Siempre activado | Activado | Evita que la app se descargue por inactividad y tarde en responder |
+| Application Insights | Deshabilitado | No es necesario para la práctica y evita consumo de créditos |
+
+Las variables de entorno de la aplicación (`SPRING_PROFILES_ACTIVE`, `SERVER_PORT` y `DB_*`) se configuran en *Configuración → Variables de entorno*, sin exponer sus valores en el repositorio.
+
+### Desplegar
+
+1. Generar el jar ejecutable en el equipo local:
+
+```bash
+./gradlew bootJar
+```
+
+El archivo queda en `build/libs/inventory-0.0.1-SNAPSHOT.jar`.
+
+2. Abrir **Azure Cloud Shell** (Bash) desde el portal, subir el jar con *Administrar archivos → Cargar* y desplegarlo:
+
+```bash
+az webapp deploy -g rg-logistock -n logistock-api-srm --src-path inventory-0.0.1-SNAPSHOT.jar --type jar
+```
+
+Cloud Shell usa la sesión del portal, por lo que no fue necesario instalar Azure CLI ni habilitar la autenticación básica de publicación.
+
+3. Revisar el arranque en *Supervisión → Secuencia de registro* hasta ver `Started InventoryApplication`.
+
+### Validar el despliegue
+
+- Inicio: `https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/`
+- Health: `https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/health`
+- Swagger UI: `https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/swagger-ui.html`
+
+_Pendiente: resultado de `/health` y evidencias de verificación._
+
+### Evidencias
+
+![Resumen de creación de la Web App](evidencias/azure/01-azure-creacion-webapp.png)
+
+![Información general del App Service](evidencias/azure/02-azure-app-service-overview.png)
+
+![Grupo de recursos rg-logistock](evidencias/azure/03-azure-resource-group.png)
+
+![HTTPS solamente activado](evidencias/azure/04-azure-https-only.png)
+
 
 
 ## Validación con Postman
