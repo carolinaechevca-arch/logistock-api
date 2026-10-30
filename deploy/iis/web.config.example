@@ -2,14 +2,11 @@
 <configuration>
   <system.webServer>
     <handlers>
-      <add name="httpPlatformHandler" path="*" verb="*"
-           modules="httpPlatformHandler" resourceType="Unspecified" />
+      <add name="httpPlatformHandler" path="*" verb="*" modules="httpPlatformHandler" resourceType="Unspecified" />
     </handlers>
     <httpPlatform
-        processPath="C:\RUTA\A\JDK21\bin\java.exe"
-        arguments="-Dserver.port=%HTTP_PLATFORM_PORT% 
-XX:MaxRAMPercentage=50.0 -jar &quot;C:\inetpub\logistock\logistock
-api.jar&quot;"
+        processPath="C:\ruta_jdk\java.exe"
+        arguments="-Dserver.port=%HTTP_PLATFORM_PORT% -XX:MaxRAMPercentage=50.0 -jar &quot;C:\inetpub\logistock\logistock-api.jar&quot;"
         startupTimeLimit="120"
         startupRetryCount="3"
         requestTimeout="00:04:00"
@@ -20,9 +17,8 @@ api.jar&quot;"
         <environmentVariable name="DB_HOST" value="localhost" />
         <environmentVariable name="DB_PORT" value="5432" />
         <environmentVariable name="DB_NAME" value="logistock" />
-        <environmentVariable name="DB_USERNAME" value="postgres" />
-        <environmentVariable name="DB_PASSWORD" 
-value="CLAVE_POSTGRES" />
+        <environmentVariable name="DB_USERNAME" value="USUARIO_POSGRES" />
+        <environmentVariable name="DB_PASSWORD" value="CLAVE_POSTGRES" />
       </environmentVariables>
     </httpPlatform>
     <defaultDocument enabled="true">
