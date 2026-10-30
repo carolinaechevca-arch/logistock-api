@@ -1522,8 +1522,15 @@ Durante el proceso se presentaron algunos inconvenientes. Uno de los principales
 
 Las responsabilidades del equipo se distribuyeron por áreas de trabajo. Una persona estuvo encargada de la API, otra de la contenerización con Docker, otra del despliegue en Kubernetes, otra de la validación y las evidencias, y finalmente una persona estuvo a cargo de la documentación y coordinación. Esta distribución permitió trabajar de manera paralela y posteriormente consolidar los resultados en un único repositorio.
 
-Las decisiones tecnológicas influyeron directamente en la configuración del Dockerfile y del despliegue. Debido al uso de Java 21 y Spring Boot, se utilizó un Dockerfile multi-stage, con una primera etapa encargada de compilar la aplicación y una segunda etapa más ligera destinada únicamente a ejecutar el archivo JAR. También se configuró la aplicación para ejecutarse con un usuario sin privilegios y se utilizó la opción -XX:MaxRAMPercentage=75.0 para adaptar el uso de memoria de la JVM a los límites del contenedor. En Kubernetes se utilizó imagePullPolicy: IfNotPresent para reutilizar la imagen construida localmente, además de requests y limits de CPU y memoria, ConfigMap, Secret, probes de disponibilidad y un servicio NodePort para exponer la API.
+Las decisiones tecnológicas influyeronxx directamente en la configuración del Dockerfile y del despliegue. Debido al uso de Java 21 y Spring Boot, se utilizó un Dockerfile multi-stage, con una primera etapa encargada de compilar la aplicación y una segunda etapa más ligera destinada únicamente a ejecutar el archivo JAR. También se configuró la aplicación para ejecutarse con un usuario sin privilegios y se utilizó la opción -XX:MaxRAMPercentage=75.0 para adaptar el uso de memoria de la JVM a los límites del contenedor. En Kubernetes se utilizó imagePullPolicy: IfNotPresent para reutilizar la imagen construida localmente, además de requests y limits de CPU y memoria, ConfigMap, Secret, probes de disponibilidad y un servicio NodePort para exponer la API.
 
+## Despliegue de PostgreSQL en Azure
+
+Se realizó el despliegue de PostgreSQL mediante el servicio **Azure Database for PostgreSQL – Flexible Server**, utilizando la región Brazil South.
+
+Se configuró el servidor `logistock-db` y la base de datos `logistock`, destinada a almacenar la información de productos, movimientos de inventario y pedidos.
+
+![Servidor PostgreSQL en Azure](evidencias/azure/13-azure-postgres.jpeg)
 ## Checklist de entrega
 
 - [x] La API funciona dentro de Docker.
