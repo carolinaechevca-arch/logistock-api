@@ -616,7 +616,33 @@ Respuesta esperada: `200 OK` con `"status":"UP"` y `"environment":"azure"`.
 
 ![Comprobación de estado con /health](evidencias/azure/08-azure-health-check.png)
 
+### Verificación de la publicación
 
+Validación realizada desde fuera del portal de Azure, en una ventana de incógnito, para comprobar que la API es accesible públicamente por HTTPS. Responsable: Juan Camilo Duarte Vasco.
+
+| Verificación | Comando o URL | Resultado esperado |
+| --- | --- | --- |
+| API pública | `GET /api/v1/products` | `200 OK` con la página de productos |
+| Health | `GET /health` | `200 OK` con `"status":"UP"` y `"environment":"azure"` |
+| Documentación | `/swagger-ui.html` | Swagger UI con todos los endpoints |
+| HTTPS Only | `curl -I http://<url>/health` | `301 Moved Permanently` hacia `https://` |
+
+```bash
+curl -i https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/health
+curl -I http://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/health
+```
+
+`"environment":"azure"` confirma que la API leyó `SPRING_PROFILES_ACTIVE` desde la configuración del App Service. La redirección `301` confirma que la opción *HTTPS solamente* está aplicada: una petición por HTTP nunca llega a la API sin cifrar.
+
+También se revisó que ninguna captura ni archivo del repositorio exponga `DB_USERNAME`, `DB_PASSWORD` ni cadenas de conexión.
+
+![API respondiendo en la URL pública](evidencias/azure/09-azure-url-publica.png)
+
+![/health en la URL pública](evidencias/azure/10-azure-health-publico.png)
+
+![Swagger UI en Azure](evidencias/azure/11-azure-swagger.png)
+
+![Redirección de HTTP a HTTPS](evidencias/azure/12-azure-redirect-https.png)
 
 ## Validación con Postman
 
