@@ -4,7 +4,18 @@ API REST para la gestión de inventario de una empresa de logística. El proyect
 
 El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos, registrar entradas y salidas de inventario, consultar la trazabilidad global o por producto y crear pedidos.
 
-## Integrantes y entregables
+## Integrantes y responsabilidades – Práctica 3
+
+| Integrante | Responsabilidad | Contribución |
+|---|---|---|
+| Ferney López Copete | Publicación en IIS | Configuración del servidor IIS, Application Pool, publicación local y evidencias. |
+| Sebastián Restrepo Mira | Despliegue en Azure App Service | Creación y publicación de la aplicación en Azure. |
+| Diana Carolina Echeverri Cadavid | Base de datos y repositorio | Configuración de PostgreSQL en Azure, revisión de Pull Requests y administración del repositorio. |
+| Juan Camilo Duarte Vasco | Configuración y evidencias de Azure | Configuración de variables de entorno y verificación de la aplicación publicada. |
+| Leidy Melissa Trejos Pamplona | Validación funcional, documentación y entrega | Pruebas de productos, inventario y pedidos con Postman, validaciones automáticas, evidencias y documentación final. |
+
+
+## Integrantes y entregables – Práctica 2
 
 | Integrante | Responsabilidad en la práctica |
 | --- | --- |
@@ -1544,3 +1555,140 @@ Se configuró el servidor `logistock-db` y la base de datos `logistock`, destina
 - [x] Video publicado en YouTube y enlazado.
 - [x] Evidencias visuales incluidas.
 - [x] Reflexión técnica (máximo una página).
+
+
+---
+
+# Práctica 3 – Despliegue en IIS y Azure App Service
+
+## Descripción
+
+En esta práctica se realizó la publicación de Logistock API
+en dos entornos: un servidor local mediante Internet
+Information Services (IIS) y Microsoft Azure App Service.
+
+El objetivo fue verificar el funcionamiento de la aplicación
+en ambos entornos, configurar su infraestructura y documentar
+las evidencias del despliegue.
+
+## Publicación en IIS
+
+**Responsable:** Ferney López Copete
+
+**Fecha de publicación:** 26/10/2026
+
+La aplicación fue preparada para ejecutarse en Windows
+mediante IIS y Java 21.
+
+Se configuró un Application Pool dedicado, un sitio web
+y el mecanismo de ejecución de la aplicación.
+
+La verificación se realiza mediante:
+
+- http://localhost:8080
+- http://localhost:8080/health
+
+Las evidencias se encuentran en:
+
+`evidencias/iis/`
+
+## Publicación en Azure App Service
+
+**Responsables:** Sebastián Restrepo Mira y Juan Camilo Duarte Vasco
+
+**Fecha de publicación:** 29/10/2026
+
+La aplicación fue publicada en Azure App Service utilizando
+Java 21 y conexión a PostgreSQL.
+
+**URL pública:**
+
+https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net
+
+**Health Check:**
+
+https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/health
+
+**Swagger:**
+
+https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/swagger-ui.html
+
+Las evidencias del despliegue están disponibles en:
+
+`evidencias/azure/`
+
+## Validación funcional mediante Postman
+
+**Responsable:** Leidy Melissa Trejos Pamplona
+
+Se realizaron pruebas funcionales para verificar las
+operaciones principales de la API publicada en Azure.
+
+### Productos
+
+- Creación de productos.
+- Consulta de productos.
+- Consulta de productos por identificador.
+- Verificación de respuestas HTTP y estructuras JSON.
+
+### Inventario
+
+- Registro de entradas.
+- Registro de salidas.
+- Consulta de movimientos.
+- Verificación de las cantidades disponibles.
+
+### Pedidos
+
+- Creación de pedidos.
+- Consulta del listado de pedidos.
+- Consulta de pedidos por identificador.
+- Verificación de la persistencia de información.
+
+### Pruebas automatizadas
+
+Se incorporaron pruebas automáticas mediante scripts
+de Postman para validar:
+
+- Códigos de respuesta HTTP.
+- Formato JSON.
+- Estructura de las respuestas.
+- Información de paginación.
+- Tiempo de respuesta de los servicios.
+
+### Evidencias
+
+Las capturas y la colección Postman utilizada se
+encuentran en:
+
+`evidencias/azure/postman/`
+
+El documento con el plan de validación funcional está en:
+
+`docs/validacion-azure.md`
+
+## Video de evidencia
+
+**Enlace del video:** Pendiente.
+
+El video presenta la publicación de la aplicación en IIS,
+la infraestructura de Azure, la conexión con PostgreSQL
+y la validación funcional mediante Postman.
+
+Todos los integrantes explican sus respectivas
+contribuciones.
+
+## Conclusiones
+
+La Práctica 3 permitió aplicar los conocimientos de
+despliegue de aplicaciones en entornos locales y en la nube.
+
+Las pruebas funcionales realizadas mediante Postman
+permitieron verificar las operaciones principales
+de Logistock API sobre el entorno publicado en Azure.
+
+El trabajo colaborativo permitió distribuir las
+responsabilidades de infraestructura, configuración,
+verificación y documentación entre los integrantes
+del equipo.
+
