@@ -618,7 +618,7 @@ Respuesta esperada: `200 OK` con `"status":"UP"` y `"environment":"azure"`.
 
 ### Verificación de la publicación
 
-Validación realizada desde fuera del portal de Azure, en una ventana de incógnito, para comprobar que la API es accesible públicamente por HTTPS. Responsable: Juan Camilo Duarte Vasco.
+Validación realizada desde fuera del portal de Azure, en una ventana de incógnito, para comprobar que la API es accesible públicamente por HTTPS.
 
 | Verificación | Comando o URL | Resultado esperado |
 | --- | --- | --- |
