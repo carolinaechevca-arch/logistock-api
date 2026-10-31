@@ -1624,37 +1624,213 @@ Las evidencias del despliegue están disponibles en:
 Se realizaron pruebas funcionales para verificar las
 operaciones principales de la API publicada en Azure.
 
-### Productos
+### Objetivo de la validación
 
-- Creación de productos.
-- Consulta de productos.
-- Consulta de productos por identificador.
-- Verificación de respuestas HTTP y estructuras JSON.
+Comprobar el correcto funcionamiento de Logistock API después de su publicación en Microsoft Azure App Service, mediante pruebas funcionales de los módulos de productos, inventario y pedidos.
 
-### Inventario
+Para realizar las pruebas se utilizó Postman, configurando la colección de solicitudes HTTP con la URL pública de Azure. También se implementaron scripts de validación automática para verificar los códigos de respuesta, la estructura JSON y otros criterios de funcionamiento.
 
-- Registro de entradas.
-- Registro de salidas.
-- Consulta de movimientos.
-- Verificación de las cantidades disponibles.
+### 1. Verificación inicial de la conexión con Azure
 
-### Pedidos
+**Petición:** `GET /api/v1/products`
 
-- Creación de pedidos.
-- Consulta del listado de pedidos.
-- Consulta de pedidos por identificador.
-- Verificación de la persistencia de información.
+Inicialmente se ejecutó una solicitud GET para comprobar la disponibilidad de la API publicada en Azure.
 
-### Pruebas automatizadas
+La aplicación respondió con el código HTTP `200 OK` y una estructura JSON paginada. En esta primera consulta no existían productos registrados, por lo que el arreglo `content` se encontraba vacío.
 
-Se incorporaron pruebas automáticas mediante scripts
-de Postman para validar:
+Esta prueba permitió verificar que la API estaba disponible y que el endpoint de consulta de productos respondía correctamente.
 
-- Códigos de respuesta HTTP.
-- Formato JSON.
-- Estructura de las respuestas.
-- Información de paginación.
-- Tiempo de respuesta de los servicios.
+![Verificación inicial de productos en Azure](evidencias/azure/postman/01-list-products-inicial.png)
+
+### 2. Pruebas automáticas en Postman
+
+Con el propósito de complementar las pruebas manuales, se incorporaron scripts de validación en la sección `Scripts > Post-response` de Postman.
+
+Estos scripts permiten comprobar automáticamente diferentes condiciones de las respuestas obtenidas.
+
+#### 2.1. Validaciones automáticas de productos
+
+**Petición:** `GET /api/v1/products`
+
+Se implementaron cinco verificaciones automáticas:
+
+- Código de respuesta HTTP 200.
+- Respuesta en formato JSON.
+- Existencia de un arreglo de productos.
+- Presencia de información de paginación.
+- Validación de la cantidad total de productos.
+
+Estas comprobaciones permiten verificar que el endpoint entregue la información con la estructura esperada.
+
+![Pruebas automáticas de productos](evidencias/azure/postman/02-tests-automaticos-products.png)
+
+#### 2.2. Validaciones automáticas de inventario
+
+**Petición:** `GET /api/v1/inventory/movements`
+
+Se configuraron validaciones para comprobar:
+
+- Código de respuesta HTTP 200.
+- Respuesta en formato JSON.
+- Existencia de una estructura de respuesta válida.
+- Tiempo de respuesta inferior a cinco segundos.
+
+Estas pruebas ayudan a verificar la disponibilidad del servicio de consulta de movimientos de inventario.
+
+![Pruebas automáticas de inventario](evidencias/azure/postman/03-tests-automaticos-inventory.png)
+
+#### 2.3. Validaciones automáticas de pedidos
+
+**Petición:** `GET /api/v1/orders`
+
+Se incorporaron pruebas automáticas para comprobar:
+
+- Código de respuesta HTTP 200.
+- Formato JSON de la respuesta.
+- Existencia de información de paginación.
+- Tiempo de respuesta inferior a cinco segundos.
+
+Estas validaciones permiten comprobar que el servicio de consulta de pedidos responda con la estructura esperada.
+
+![Pruebas automáticas de pedidos](evidencias/azure/postman/04-tests-automaticos-orders.png)
+
+### 3. Pruebas funcionales del módulo de productos
+
+El módulo de productos permite crear y consultar los artículos administrados por Logistock API.
+
+Para comprobar estas funcionalidades, se realizaron operaciones de creación y consulta mediante solicitudes HTTP.
+
+#### 3.1. Creación de un producto
+
+**Petición:** `POST /api/v1/products`
+
+Se envió una solicitud POST con los datos de un producto en formato JSON, incluyendo nombre, descripción, categoría, cantidad inicial y precio.
+
+Esta operación permitió comprobar que la API procesa solicitudes de creación y registra nuevos productos.
+
+![Creación de producto](evidencias/azure/postman/05-create-product.png)
+
+#### 3.2. Consulta de producto por identificador
+
+**Petición:** `GET /api/v1/products/{id}`
+
+Después de crear el producto, se utilizó su identificador para consultar la información mediante una petición GET.
+
+Esta prueba permitió comprobar que el producto registrado podía recuperarse desde la aplicación.
+
+![Consulta de producto por ID](evidencias/azure/postman/06-get-product-id.png)
+
+#### 3.3. Consulta del listado de productos
+
+**Petición:** `GET /api/v1/products`
+
+Se ejecutó nuevamente la consulta general de productos para verificar que el artículo creado apareciera en el listado.
+
+Esta operación permitió comprobar la recuperación de los registros almacenados y el funcionamiento de la consulta paginada.
+
+![Listado de productos](evidencias/azure/postman/07-list-products.png)
+
+### 4. Pruebas funcionales del módulo de inventario
+
+El módulo de inventario permite registrar entradas y salidas de productos, consultar movimientos y verificar las cantidades disponibles.
+
+Las pruebas se realizaron utilizando productos previamente registrados.
+
+#### 4.1. Registro de entrada de inventario
+
+**Petición:** `POST /api/v1/inventory/entries`
+
+Se ejecutó una solicitud POST con el identificador de un producto, la cantidad ingresada y una observación.
+
+La operación permitió comprobar el registro de entradas de mercancía y su efecto sobre la cantidad disponible del producto.
+
+![Entrada de inventario](evidencias/azure/postman/08-inventory-entry.png)
+
+#### 4.2. Registro de salida de inventario
+
+**Petición:** `POST /api/v1/inventory/exits`
+
+Se realizó una solicitud POST para registrar la salida de unidades de un producto existente.
+
+Esta prueba permitió verificar el funcionamiento de la operación de salida y la actualización de las cantidades disponibles.
+
+![Salida de inventario](evidencias/azure/postman/09-inventory-exit.png)
+
+#### 4.3. Consulta de movimientos de inventario
+
+**Petición:** `GET /api/v1/inventory/movements`
+
+Después de registrar las entradas y salidas, se consultó el listado de movimientos.
+
+Esta operación permitió revisar la trazabilidad de los movimientos realizados sobre el inventario.
+
+![Movimientos de inventario](evidencias/azure/postman/10-inventory-movements.png)
+
+#### 4.4. Verificación del stock actualizado
+
+**Petición:** `GET /api/v1/products/{id}`
+
+Finalmente, se consultó nuevamente el producto utilizado en las pruebas para verificar su cantidad disponible después de las operaciones de entrada y salida.
+
+Esta comprobación permitió relacionar los movimientos registrados con el estado actualizado del inventario.
+
+![Stock actualizado del producto](evidencias/azure/postman/11-product-stock.png)
+
+### 5. Pruebas funcionales del módulo de pedidos
+
+El módulo de pedidos permite registrar solicitudes que contienen productos y consultar los pedidos almacenados.
+
+Se realizaron pruebas de creación y recuperación de información.
+
+#### 5.1. Creación de un pedido
+
+**Petición:** `POST /api/v1/orders`
+
+Se envió una solicitud POST con un arreglo de productos, identificadores y cantidades.
+
+La prueba permitió comprobar que la API procesa la solicitud y registra un pedido utilizando los productos existentes.
+
+![Creación de pedido](evidencias/azure/postman/12-create-order.png)
+
+#### 5.2. Consulta de pedido por identificador
+
+**Petición:** `GET /api/v1/orders/{id}`
+
+Después de crear el pedido, se utilizó su identificador para recuperar la información registrada.
+
+Esta operación permitió verificar que el pedido pudiera consultarse individualmente.
+
+![Consulta de pedido por ID](evidencias/azure/postman/13-get-order-id.png)
+
+#### 5.3. Consulta del listado de pedidos
+
+**Petición:** `GET /api/v1/orders`
+
+Se ejecutó una solicitud GET para consultar el listado general de pedidos disponibles en la aplicación.
+
+Esta prueba permitió verificar la recuperación de pedidos desde el entorno publicado en Azure.
+
+![Listado general de pedidos](evidencias/azure/postman/14-list-orders.png)
+
+### 6. Resultados de la validación funcional
+
+Las pruebas realizadas mediante Postman permitieron verificar las principales operaciones disponibles en Logistock API.
+
+Se comprobó el funcionamiento de las consultas de productos, la creación y recuperación de registros, los movimientos de inventario y las operaciones de pedidos.
+
+Adicionalmente, los scripts de Postman permitieron ejecutar comprobaciones automáticas sobre los códigos HTTP, las estructuras JSON y la información de paginación.
+
+Las capturas anteriores documentan las peticiones realizadas y las respuestas obtenidas durante la validación.
+
+### 7. Evidencias y colección de Postman
+
+La colección utilizada para la validación se encuentra disponible en el repositorio:
+
+[Descargar colección Postman de Azure](evidencias/azure/postman/Logistock_Azure.postman_collection.json)
+
+El plan de validación funcional puede consultarse en:
+
+[Plan de pruebas funcionales de Azure](docs/validacion-azure.md)
 
 ### Evidencias
 
