@@ -1845,7 +1845,7 @@ El documento con el plan de validación funcional está en:
 
 ## Video de evidencia
 
-**Enlace del video:** Pendiente.
+**Enlace del video:** https://youtu.be/9zHJjEtVxtA
 
 El video presenta la publicación de la aplicación en IIS,
 la infraestructura de Azure, la conexión con PostgreSQL
