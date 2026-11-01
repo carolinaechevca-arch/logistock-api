@@ -11,7 +11,7 @@ El desarrollo se realiza de forma incremental. Actualmente se pueden administrar
 | Ferney López Copete | Publicación en IIS | Configuración del servidor IIS, Application Pool, publicación local y evidencias. |
 | Sebastián Restrepo Mira | Despliegue en Azure App Service | Creación y publicación de la aplicación en Azure. |
 | Diana Carolina Echeverri Cadavid | Base de datos y repositorio | Configuración de PostgreSQL en Azure, revisión de Pull Requests y administración del repositorio. |
-| Juan Camilo Duarte Vasco | Configuración y evidencias de Azure | Configuración de variables de entorno y verificación de la aplicación publicada. |
+| Juan Camilo Duarte Vasco | Verificación y evidencias de Azure | Configuración de variables de entorno y verificación de la aplicación publicada. |
 | Leidy Melissa Trejos Pamplona | Validación funcional, documentación y entrega | Pruebas de productos, inventario y pedidos con Postman, validaciones automáticas, evidencias y documentación final. |
 
 
