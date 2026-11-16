@@ -31,14 +31,17 @@ commit en main ──► logistock-ci (build + test + artefacto logistock-jar)
 | URL pública | https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net |
 | Región | Chile Central |
 | Pila | Java 21 (Java SE, servidor integrado de Spring Boot) |
-| Sistema operativo | Linux *(verificar en Overview; si es Windows, `appType: webApp`)* |
+| Sistema operativo | Linux (por eso la tarea usa `appType: webAppLinux`) |
+| Grupo de recursos | `rg-logistock` |
 | HTTPS Only | Activado |
 | Comprobación de salud | `/health` |
 | Base de datos | Azure Database for PostgreSQL |
 
 **Variables de entorno (App Settings), sin valores en el repo:**
 `SPRING_PROFILES_ACTIVE`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`,
-`DB_PASSWORD`, `SERVER_PORT`.
+`DB_PASSWORD`, `SERVER_PORT`, `WEBSITE_HEALTHCHECK_MAXPINGFAILURES`.
+Los valores se ven ocultos en el portal ("Mostrar valor") y no existen en el
+repositorio; `application.yaml` solo referencia los nombres `${DB_...}`.
 
 ## 3. Configuración en Azure DevOps (paso a paso)
 
