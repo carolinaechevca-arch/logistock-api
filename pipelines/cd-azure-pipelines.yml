@@ -1,0 +1,119 @@
+# =============================================================================
+# Logistock API - Pipeline de Entrega Continua (CD)
+# Responsable: Sebastián Restrepo Mira
+#
+# Qué hace:
+#   1. Se dispara SOLA cuando la pipeline de CI (logistock-ci) termina con
+#      éxito sobre la rama main. No tiene trigger por commits propio.
+#   2. Descarga el artefacto publicado por esa ejecución de CI (no recompila).
+#   3. Despliega el .jar en Azure App Service.
+#   4. Verifica /health en la URL pública.
+#
+# Contrato con la CI (acordado con Ferney):
+#   - Nombre de la pipeline de CI en Azure DevOps: logistock-ci
+#   - Nombre del artefacto publicado:             logistock-jar
+#   - Contenido del artefacto:                    un único *.jar ejecutable (bootJar)
+#
+# Secretos: ninguno en este archivo. La credencial hacia Azure vive en la
+# conexión de servicio "sc-azure-logistock" (Azure DevOps > Project settings >
+# Service connections) y las credenciales de PostgreSQL están en las
+# Variables de entorno (App Settings) del App Service.
+# =============================================================================
+
+# Sin trigger por commits: la CD solo arranca a partir de una CI exitosa.
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+    - pipeline: ci                 # alias local para referirse a la CI
+      source: logistock-ci         # nombre de la pipeline de CI en Azure DevOps
+      trigger:
+        branches:
+          include:
+            - main
+
+variables:
+  azureSubscription: 'sc-azure-logistock'   # nombre de la conexión de servicio
+  webAppName: 'logistock-api-srm'
+  appType: 'webAppLinux'                    # cambiar a 'webApp' si el App Service es Windows
+  appUrl: 'https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net'
+  artifactName: 'logistock-jar'
+
+# Agente hospedado por Microsoft. Si la organización todavía no tiene
+# paralelismo gratuito aprobado, comentar vmImage y usar el agente propio:
+#   pool:
+#     name: Default
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  # ---------------------------------------------------------------------------
+  - stage: Deploy
+    displayName: 'Desplegar en Azure App Service'
+    jobs:
+      - deployment: DeployWebApp
+        displayName: 'Desplegar artefacto de CI'
+        environment: 'logistock-produccion'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                # Deja en el log qué ejecución de CI y qué commit se despliegan.
+                - script: |
+                    echo "=============================================="
+                    echo " Ejecución de CI : $(resources.pipeline.ci.runName) (id $(resources.pipeline.ci.runID))"
+                    echo " Rama            : $(resources.pipeline.ci.sourceBranch)"
+                    echo " Commit          : $(resources.pipeline.ci.sourceCommit)"
+                    echo " Artefacto       : $(artifactName)"
+                    echo " App Service     : $(webAppName)"
+                    echo "=============================================="
+                  displayName: 'Trazabilidad: CI y commit de origen'
+
+                # Descarga el artefacto que publicó ESA ejecución de CI.
+                - download: ci
+                  artifact: $(artifactName)
+                  displayName: 'Descargar artefacto de CI'
+
+                - script: |
+                    echo "Contenido del artefacto recibido:"
+                    ls -la "$(Pipeline.Workspace)/ci/$(artifactName)"
+                  displayName: 'Mostrar artefacto recibido'
+
+                - task: AzureWebApp@1
+                  displayName: 'Desplegar .jar en App Service'
+                  inputs:
+                    azureSubscription: '$(azureSubscription)'
+                    appType: '$(appType)'
+                    appName: '$(webAppName)'
+                    package: '$(Pipeline.Workspace)/ci/$(artifactName)/*.jar'
+                    deploymentMethod: 'auto'
+
+  # ---------------------------------------------------------------------------
+  - stage: Verify
+    displayName: 'Verificar aplicación publicada'
+    dependsOn: Deploy
+    jobs:
+      - job: SmokeTest
+        displayName: 'Comprobar /health en la URL pública'
+        steps:
+          - checkout: none
+          - script: |
+              set -e
+              url="$(appUrl)/health"
+              echo "Comprobando $url"
+              # Spring Boot tarda en arrancar tras el despliegue: hasta ~5 minutos.
+              for i in $(seq 1 20); do
+                code=$(curl -s -o response.json -w "%{http_code}" --max-time 20 "$url" || echo "000")
+                echo "Intento $i: HTTP $code"
+                if [ "$code" = "200" ] && grep -q '"status":"UP"' response.json; then
+                  echo "Respuesta de /health:"
+                  cat response.json; echo
+                  echo "Aplicación disponible y saludable."
+                  exit 0
+                fi
+                sleep 15
+              done
+              echo "##vso[task.logissue type=error]La aplicación no respondió UP en /health."
+              exit 1
+            displayName: 'Smoke test /health'
