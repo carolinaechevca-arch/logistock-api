@@ -1,0 +1,114 @@
+# =============================================================================
+# Logistock API - Pipeline de Integracion Continua (CI)
+# Responsable: Ferney Lopez Copete
+#
+# Que hace:
+#   1. Se dispara SOLA con cada commit que llega a la rama main.
+#   2. Valida tambien los Pull Requests hacia main (sin desplegar).
+#   3. Usa JDK 21, restaura dependencias, compila y ejecuta las pruebas.
+#   4. Empaqueta el jar ejecutable (bootJar) y lo publica como artefacto.
+#
+# Contrato con la CD (pipelines/cd-azure-pipelines.yml):
+#   - Nombre de esta pipeline en Azure DevOps: logistock-ci
+#   - Nombre del artefacto publicado:          logistock-jar
+#   - Contenido del artefacto:                 un unico *.jar ejecutable (bootJar)
+#
+# Secretos: ninguno. Las pruebas usan H2 en memoria (src/test/resources).
+# =============================================================================
+
+name: CI-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - README.md
+      - docs/**
+      - evidencias/**
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  artifactName: 'logistock-jar'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: Build
+    displayName: 'Integracion continua'
+    jobs:
+      - job: BuildTestPackage
+        displayName: 'Restaurar, compilar, probar y empaquetar'
+        steps:
+          - checkout: self
+            displayName: 'Descargar codigo del commit'
+
+          - script: |
+              echo "=============================================="
+              echo " Ejecucion de CI : $(Build.BuildNumber)"
+              echo " Motivo          : $(Build.Reason)"
+              echo " Rama            : $(Build.SourceBranch)"
+              echo " Commit          : $(Build.SourceVersion)"
+              echo "=============================================="
+            displayName: 'Trazabilidad: commit que se construye'
+
+          - task: JavaToolInstaller@0
+            displayName: 'Usar JDK 21'
+            inputs:
+              versionSpec: '21'
+              jdkArchitectureOption: 'x64'
+              jdkSourceOption: 'PreInstalled'
+
+          - script: |
+              java -version
+              chmod +x gradlew
+              ./gradlew --version
+            displayName: 'Verificar Java y Gradle Wrapper'
+
+          - script: ./gradlew dependencies --no-daemon > /dev/null
+            displayName: 'Restaurar dependencias'
+
+          - script: ./gradlew compileJava --no-daemon
+            displayName: 'Compilar'
+
+          - script: ./gradlew test --no-daemon
+            displayName: 'Ejecutar pruebas automatizadas'
+
+          - task: PublishTestResults@2
+            displayName: 'Publicar resultados de pruebas'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/build/test-results/test/TEST-*.xml'
+              testRunTitle: 'Pruebas LogiStock $(Build.BuildNumber)'
+              failTaskOnFailedTests: true
+
+          - script: ./gradlew bootJar --no-daemon
+            displayName: 'Empaquetar jar ejecutable (bootJar)'
+
+          - script: |
+              set -e
+              cantidad=$(ls build/libs/*.jar | wc -l)
+              echo "Archivos .jar generados: $cantidad"
+              ls -l build/libs
+              if [ "$cantidad" -ne 1 ]; then
+                echo "##vso[task.logissue type=error]Se esperaba un solo .jar y hay $cantidad"
+                exit 1
+              fi
+              mkdir -p "$(Build.ArtifactStagingDirectory)/$(artifactName)"
+              cp build/libs/*.jar "$(Build.ArtifactStagingDirectory)/$(artifactName)/"
+              ls -l "$(Build.ArtifactStagingDirectory)/$(artifactName)"
+            displayName: 'Validar y preparar el artefacto'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publicar artefacto logistock-jar'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/$(artifactName)'
+              artifact: '$(artifactName)'
+              publishLocation: 'pipeline'
