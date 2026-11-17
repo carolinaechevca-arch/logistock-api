@@ -4,6 +4,41 @@ API REST para la gestión de inventario de una empresa de logística. El proyect
 
 El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos, registrar entradas y salidas de inventario, consultar la trazabilidad global o por producto y crear pedidos.
 
+## Equipo y responsabilidades - Práctica final CI/CD
+
+| Integrante | Responsabilidad | Contribución verificable |
+| --- | --- | --- |
+| Diana Carolina Echeverri Cadavid | Gestión de GitHub y documentación | Administración del repositorio, acceso del docente, autorización de Azure DevOps, actualización del README y trazabilidad de los aportes del equipo. |
+| Ferney López Copete | Integración Continua (CI) | Configuración de la pipeline `logistock-ci`, ejecución de pruebas, construcción con Gradle y publicación del artefacto `logistock-jar`. |
+| Sebastián Restrepo Mira | Entrega Continua (CD) y Azure | Configuración de Azure App Service, conexión de servicio y pipeline `logistock-cd` para desplegar automáticamente el artefacto producido por CI. |
+| Juan Camilo Duarte Vasco | Secretos, trazabilidad y cambio controlado | Gestión segura de variables, identificación del commit y la ejecución desplegada, y preparación del cambio visible para la demostración. |
+| Leidy Melissa Trejos Pamplona | Pruebas, evidencias y entrega | Pruebas funcionales sobre la URL pública, organización de evidencias, coordinación de los dos videos, memoria técnica PDF y entrega en Teams. |
+
+### Flujo automatizado
+
+```text
+Commit en main -> logistock-ci -> pruebas y build -> logistock-jar
+                                                        |
+                                                        v
+Aplicación en Azure <- Azure App Service <- logistock-cd
+```
+
+- Repositorio: `logistock-api`.
+- Rama principal: `main`.
+- Proyecto de Azure DevOps: [logistock](https://dev.azure.com/logistock-team/logistock).
+- Pipeline de CI: `logistock-ci`.
+- Artefacto de CI: `logistock-jar`, con un único archivo `.jar` ejecutable.
+- Pipeline de CD: `logistock-cd`.
+- Azure App Service: `logistock-api-srm`.
+- URL pública: <https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net>.
+- Comprobación de salud: <https://logistock-api-srm-agabdzh4c0bdfgg2.chilecentral-01.azurewebsites.net/health>.
+- Acceso del docente en GitHub: usuario `oalarconpe` (pendiente de verificación final).
+- Video de CI: pendiente.
+- Video de CD: pendiente.
+- Memoria técnica PDF: pendiente.
+
+La pipeline de CD consume el artefacto publicado por CI y no vuelve a compilar la aplicación. Las credenciales de PostgreSQL se administran mediante variables de entorno de Azure App Service y no se almacenan en el repositorio.
+
 ## Integrantes y responsabilidades – Práctica 3
 
 | Integrante | Responsabilidad | Contribución |
