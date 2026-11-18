@@ -4,6 +4,18 @@ API REST para la gestión de inventario de una empresa de logística. El proyect
 
 El desarrollo se realiza de forma incremental. Actualmente se pueden administrar productos, registrar entradas y salidas de inventario, consultar la trazabilidad global o por producto y crear pedidos.
 
+## Integracion Continua (CI) - Practica final
+
+| Elemento | Valor |
+|---|---|
+| Responsable | Ferney Lopez Copete |
+| Pipeline | `logistock-ci` en Azure DevOps (`https://dev.azure.com/logistock-team/logistock`) |
+| Definicion | [`pipelines/ci-azure-pipelines.yml`](pipelines/ci-azure-pipelines.yml) |
+| Disparador | Commit en `main` (y validacion de PR hacia `main`) |
+| Artefacto | `logistock-jar` (un unico jar de `bootJar`), consumido por la CD |
+| Ultima ejecucion | [CI-20261118.4](<enlace a la ejecucion>) |
+| Detalle y evidencias | [`docs/ci-azure.md`](docs/ci-azure.md) - [`evidencias/ci/`](evidencias/ci/) |
+
 ## Integrantes y responsabilidades – Práctica 3
 
 | Integrante | Responsabilidad | Contribución |
