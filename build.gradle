@@ -35,6 +35,21 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Etiqueta de trazabilidad: guarda dentro del .jar la ejecucion de CI y el commit
+// que lo fabricaron. Azure Pipelines define BUILD_BUILDNUMBER y BUILD_SOURCEVERSION;
+// fuera de la pipeline (en un equipo local) quedan como "local".
+// /health muestra estos valores. Responsable: Juan Camilo Duarte Vasco.
+springBoot {
+	buildInfo {
+		properties {
+			additional = [
+				'ciBuild': System.getenv('BUILD_BUILDNUMBER') ?: 'local',
+				'commit' : System.getenv('BUILD_SOURCEVERSION') ?: 'local'
+			]
+		}
+	}
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }
