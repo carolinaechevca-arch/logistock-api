@@ -83,4 +83,4 @@ flujo 100 % automático.
 
 | # | Problema | Causa | Solución |
 |---|---|---|---|
-| 1 | *(completar durante la implementación)* | | |
+| 1 | La CD terminaba en verde pero `/health` seguía mostrando la versión anterior | El `.jar` se subía con su nombre original (`inventory-0.0.1-SNAPSHOT.jar`); App Service en Linux ejecuta `app.jar`, así que seguía corriendo el de la práctica 3. El smoke test solo comprobaba `"status":"UP"`, que la versión vieja también cumple | Se agregó el paso "Preparar paquete app.jar" y el smoke test ahora exige que `/health` reporte el mismo commit que el artefacto de CI |

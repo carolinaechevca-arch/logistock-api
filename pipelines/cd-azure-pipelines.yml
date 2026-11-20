@@ -80,13 +80,23 @@ stages:
                     ls -la "$(Pipeline.Workspace)/ci/$(artifactName)"
                   displayName: 'Mostrar artefacto recibido'
 
+                # App Service (Java SE en Linux) ejecuta /home/site/wwwroot/app.jar.
+                # Si el .jar se sube con otro nombre, queda al lado y Azure sigue
+                # ejecutando el app.jar anterior. Por eso se publica como app.jar.
+                - script: |
+                    set -e
+                    mkdir -p "$(Pipeline.Workspace)/paquete"
+                    cp "$(Pipeline.Workspace)"/ci/$(artifactName)/*.jar "$(Pipeline.Workspace)/paquete/app.jar"
+                    ls -la "$(Pipeline.Workspace)/paquete"
+                  displayName: 'Preparar paquete app.jar'
+
                 - task: AzureWebApp@1
                   displayName: 'Desplegar .jar en App Service'
                   inputs:
                     azureSubscription: '$(azureSubscription)'
                     appType: '$(appType)'
                     appName: '$(webAppName)'
-                    package: '$(Pipeline.Workspace)/ci/$(artifactName)/*.jar'
+                    package: '$(Pipeline.Workspace)/paquete/app.jar'
                     deploymentMethod: 'auto'
 
   # ---------------------------------------------------------------------------
@@ -96,24 +106,30 @@ stages:
     jobs:
       - job: SmokeTest
         displayName: 'Comprobar /health en la URL pública'
+        variables:
+          expectedCommit: $(resources.pipeline.ci.sourceCommit)
         steps:
           - checkout: none
+          # No basta con "status":"UP": la versión anterior también responde UP.
+          # Se exige además que /health reporte el commit del artefacto desplegado.
           - script: |
-              set -e
               url="$(appUrl)/health"
               echo "Comprobando $url"
+              echo "Commit esperado: $(expectedCommit)"
               # Spring Boot tarda en arrancar tras el despliegue: hasta ~5 minutos.
               for i in $(seq 1 20); do
                 code=$(curl -s -o response.json -w "%{http_code}" --max-time 20 "$url" || echo "000")
                 echo "Intento $i: HTTP $code"
-                if [ "$code" = "200" ] && grep -q '"status":"UP"' response.json; then
+                if [ "$code" = "200" ] && grep -q '"status":"UP"' response.json \
+                   && grep -q "\"commit\":\"$(expectedCommit)\"" response.json; then
                   echo "Respuesta de /health:"
                   cat response.json; echo
-                  echo "Aplicación disponible y saludable."
+                  echo "Aplicación saludable y ejecutando el commit desplegado."
                   exit 0
                 fi
+                [ -s response.json ] && cat response.json && echo
                 sleep 15
               done
-              echo "##vso[task.logissue type=error]La aplicación no respondió UP en /health."
+              echo "##vso[task.logissue type=error]/health no respondió UP con el commit $(expectedCommit)."
               exit 1
-            displayName: 'Smoke test /health'
+            displayName: 'Smoke test /health (estado y commit)'
