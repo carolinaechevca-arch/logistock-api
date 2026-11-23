@@ -1867,6 +1867,37 @@ El plan de validación funcional puede consultarse en:
 
 [Plan de pruebas funcionales de Azure](docs/validacion-azure.md)
 
+### 8.  Pruebas funcionales y evidencias en Azure App Service
+- **Ubicación de evidencias:** [`evidencias/azure/postmanFinal/`](evidencias/azure/postmanFinal/)
+
+### Casos de prueba y evidencias
+
+| ID | Módulo | Método | Prueba realizada | Evidencia |
+|---|---|---|---|---|
+| CP-01 | Salud | GET | Verificación de disponibilidad de la API | [Ver captura](evidencias/azure/postmanFinal/CP-01-health.png) |
+| CP-02 | Productos | POST | Creación de un producto | [Ver captura](evidencias/azure/postmanFinal/CP-02-crear-producto.png) |
+| CP-03 | Productos | GET | Consulta del listado de productos | [Ver captura](evidencias/azure/postmanFinal/CP-03-listar-productos.png) |
+| CP-04 | Productos | GET | Consulta de producto por ID | [Ver captura](evidencias/azure/postmanFinal/CP-04-consultar-producto.png) |
+| CP-05 | Inventario | POST | Registro de entrada de inventario | [Ver captura](evidencias/azure/postmanFinal/CP-05-entrada-inventario.png) |
+| CP-06 | Inventario | POST | Registro de salida de inventario | [Ver captura](evidencias/azure/postmanFinal/CP-06-salida-inventario.png) |
+| CP-07 | Inventario | GET | Consulta de movimientos de inventario | [Ver captura](evidencias/azure/postmanFinal/CP-07-movimientos.png) |
+| CP-08 | Pedidos | POST | Creación de un pedido | [Ver captura](evidencias/azure/postmanFinal/CP-08-crear-pedido.png) |
+| CP-09 | Pedidos | GET | Consulta del listado de pedidos | [Ver captura](evidencias/azure/postmanFinal/CP-09-listar-pedidos.png) |
+| CP-10 | Pedidos | GET | Consulta de pedido por ID | [Ver captura](evidencias/azure/postmanFinal/CP-10-consultar-pedido.png) |
+
+### Validaciones realizadas
+
+Las pruebas funcionales se orientaron a verificar:
+
+- Disponibilidad de la aplicación mediante HTTPS.
+- Respuestas HTTP de los servicios REST.
+- Creación y consulta de productos.
+- Registro de entradas y salidas de inventario.
+- Consulta de movimientos y trazabilidad.
+- Creación y consulta de pedidos.
+- Funcionamiento de los servicios publicados en Azure App Service.
+
+
 ### Evidencias
 
 Las capturas y la colección Postman utilizada se
