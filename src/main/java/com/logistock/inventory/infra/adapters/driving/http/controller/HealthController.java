@@ -22,7 +22,7 @@ import java.util.Map;
 public class HealthController {
 
     // Version visible de la aplicacion. Se cambia en el "cambio controlado" de la demo.
-    static final String APP_VERSION = "v1";
+    static final String APP_VERSION = "v2";
     private static final String LOCAL = "local";
 
     private final Environment environment;
